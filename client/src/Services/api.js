@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// export const API_URL = " https://yuvraj-industries-private.onrender.com";
-export const API_URL = " http://localhost:5500";
+export const API_URL = "https://yuvraj-industries-private-1.onrender.com";
+// export const API_URL = " http://localhost:5500";
 
 export const createCategory = (formData) =>
   axios.post(`${API_URL}/api/categories`, formData);
