@@ -20,7 +20,7 @@ connectDB();
 const app = express();
 
 const corsOptions = {
-  origin: process.env.ORGIN_URL,
+  origin: process.env.ORIGIN_URL,
   methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
   credentials: true,
 };
