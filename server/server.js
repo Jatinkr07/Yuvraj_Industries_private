@@ -20,8 +20,8 @@ connectDB();
 const app = express();
 
 const corsOptions = {
-  origin: "https://yuvraj-industries-v1.netlify.app/",
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  origin: process.env.ORGIN_URL,
+  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
   credentials: true,
 };
 
