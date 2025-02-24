@@ -31,10 +31,11 @@ export const dealerLogin = async (req, res) => {
     if (!dealer || !(await dealer.comparePassword(password))) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
+    // In dealerLogin or adminLogin
     res.cookie("dealerAuth", "authenticated", {
       httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production" ? true : false,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 3600000,
     });
     res.status(200).json({ message: "Login successful", dealerId: dealer._id });

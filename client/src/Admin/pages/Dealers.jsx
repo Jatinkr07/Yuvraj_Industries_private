@@ -25,10 +25,10 @@ const Dealers = () => {
   const [dealers, setDealers] = useState([]);
 
   useEffect(() => {
-    fetchSubDealers();
+    fetchDealers();
   }, []);
 
-  const fetchSubDealers = async () => {
+  const fetchDealers = async () => {
     try {
       const response = await getDealers();
       const formattedData = response.data.map((dealer, index) => ({
@@ -230,7 +230,7 @@ const Dealers = () => {
       <FormModalSub
         visible={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
-        onSuccess={fetchSubDealers}
+        onSuccess={fetchDealers}
       />
 
       <SubDealerModal
