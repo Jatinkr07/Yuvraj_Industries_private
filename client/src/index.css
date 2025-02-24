@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+.custom {
+  height: 40px;
+  width: 80px;
+}
+
+.ant-card-body {
+  padding: 24px  0px !important;
+}
+
+
+
