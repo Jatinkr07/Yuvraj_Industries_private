@@ -13,9 +13,9 @@ import {
 
 const router = express.Router();
 
-router.post("/create", isAuthenticated, createDealer);
+router.post("/create", createDealer);
 router.post("/login", dealerLogin);
-router.get("/list", isAuthenticated, getDealers);
+router.get("/list", getDealers);
 router.delete("/:id", isAuthenticated, deleteDealer);
 
 export default router;

@@ -3,7 +3,7 @@ export const isAuthenticated = (req, res, next) => {
   if (req.cookies.adminAuth === "authenticated") {
     return next();
   }
-  return res.status(401).json({ message: "Unauthorized" });
+  return res.status(401).json({ cookie: req.cookies, message: "Unauthorized" });
 };
 
 export const isDealerAuthenticated = (req, res, next) => {
