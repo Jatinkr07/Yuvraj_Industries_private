@@ -6,13 +6,16 @@ import {
   getDealers,
   deleteDealer,
 } from "../Controllers/DealerController.js";
-import { isAuthenticated } from "../Middleware/authMiddleware.js";
+import {
+  isAuthenticated,
+  isDealerAuthenticated,
+} from "../Middleware/authMiddleware.js";
 
 const router = express.Router();
 
 router.post("/create", isAuthenticated, createDealer);
 router.post("/login", dealerLogin);
-router.get("/list", isAuthenticated, getDealers);
+router.get("/list", isDealerAuthenticated, getDealers);
 router.delete("/:id", isAuthenticated, deleteDealer);
 
 export default router;

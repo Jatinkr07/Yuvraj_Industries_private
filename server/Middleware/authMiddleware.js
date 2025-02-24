@@ -7,6 +7,7 @@ export const isAuthenticated = (req, res, next) => {
 };
 
 export const isDealerAuthenticated = (req, res, next) => {
+  console.log("Cookies -->", req.cookies);
   if (req.cookies.subDealerAuth === "authenticated") {
     return next();
   }
