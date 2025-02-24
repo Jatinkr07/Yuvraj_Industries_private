@@ -40,7 +40,7 @@ const Dealers = () => {
       }));
       setDealers(formattedData);
     } catch (error) {
-      console.error("Error fetching sub-dealers:", error);
+      console.error("Error fetching dealers:", error);
     }
   };
 

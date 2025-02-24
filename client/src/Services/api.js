@@ -50,21 +50,14 @@ export const deleteProduct = async (id) => {
   return response.data;
 };
 
-// Dealer API Calls - Fixed Routes & Consistency
+axios.defaults.withCredentials = true;
+
 export const createDealer = (data) =>
-  axios.post(`${API_URL}/api/dealer/create`, data, {
-    withCredentials: true,
-  });
+  axios.post(`${API_URL}/api/dealer/create`, data);
 
 export const dealerLogin = (data) =>
-  axios.post(`${API_URL}/api/dealer/login`, data, {
-    withCredentials: true,
-  });
+  axios.post(`${API_URL}/api/dealer/login`, data);
 
-export const getDealers = () =>
-  axios.get(`${API_URL}/api/dealer/list`, {
-    withCredentials: true,
-  });
+export const getDealers = () => axios.get(`${API_URL}/api/dealer/list`);
 
-export const deleteDealer = (id) =>
-  axios.delete(`${API_URL}/api/dealer/${id}`, { withCredentials: true });
+export const deleteDealer = (id) => axios.delete(`${API_URL}/api/dealer/${id}`);

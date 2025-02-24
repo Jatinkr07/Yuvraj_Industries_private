@@ -15,7 +15,7 @@ const router = express.Router();
 
 router.post("/create", isAuthenticated, createDealer);
 router.post("/login", dealerLogin);
-router.get("/list", isDealerAuthenticated, getDealers);
+router.get("/list", isAuthenticated, getDealers);
 router.delete("/:id", isAuthenticated, deleteDealer);
 
 export default router;

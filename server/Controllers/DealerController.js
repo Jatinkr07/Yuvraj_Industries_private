@@ -33,8 +33,8 @@ export const dealerLogin = async (req, res) => {
     }
     res.cookie("dealerAuth", "authenticated", {
       httpOnly: false,
-      secure: true,
-      sameSite: "none",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 3600000,
     });
     res.status(200).json({ message: "Login successful", dealerId: dealer._id });

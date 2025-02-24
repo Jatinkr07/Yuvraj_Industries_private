@@ -19,13 +19,12 @@ connectDB();
 
 const app = express();
 
-const corsOptions = {
-  origin: process.env.ORIGIN_URL,
-  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: process.env.ORIGIN_URL,
+    credentials: true,
+  })
+);
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use("/uploads", express.static(join(__dirname, "uploads")));
