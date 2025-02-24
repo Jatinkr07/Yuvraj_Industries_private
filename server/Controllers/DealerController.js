@@ -32,7 +32,7 @@ export const dealerLogin = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
     res.cookie("dealerAuth", "authenticated", {
-      httpOnly: false,
+      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       maxAge: 3600000,
