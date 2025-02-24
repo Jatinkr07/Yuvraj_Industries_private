@@ -1,6 +1,7 @@
 import axios from "axios";
 
-export const API_URL = " https://yuvraj-industries-private.onrender.com";
+// export const API_URL = " https://yuvraj-industries-private.onrender.com";
+export const API_URL = " http://localhost:5500";
 
 export const createCategory = (formData) =>
   axios.post(`${API_URL}/api/categories`, formData);
@@ -50,14 +51,21 @@ export const deleteProduct = async (id) => {
   return response.data;
 };
 
-axios.defaults.withCredentials = true;
-
+// Dealer API Calls - Fixed Routes & Consistency
 export const createDealer = (data) =>
-  axios.post(`${API_URL}/api/dealer/create`, data);
+  axios.post(`${API_URL}/api/dealer/create`, data, {
+    withCredentials: true,
+  });
 
 export const dealerLogin = (data) =>
-  axios.post(`${API_URL}/api/dealer/login`, data);
+  axios.post(`${API_URL}/api/dealer/login`, data, {
+    withCredentials: true,
+  });
 
-export const getDealers = () => axios.get(`${API_URL}/api/dealer/list`);
+export const getDealers = () =>
+  axios.get(`${API_URL}/api/dealer/list`, {
+    withCredentials: true,
+  });
 
-export const deleteDealer = (id) => axios.delete(`${API_URL}/api/dealer/${id}`);
+export const deleteDealer = (id) =>
+  axios.delete(`${API_URL}/api/dealer/${id}`, { withCredentials: true });
