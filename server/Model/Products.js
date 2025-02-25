@@ -73,6 +73,13 @@ const productSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    assignedTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Dealer",
+      default: null,
+    },
+    isAssigned: { type: Boolean, default: false },
+    assignedAt: { type: Date },
   },
   {
     timestamps: true,

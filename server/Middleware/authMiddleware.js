@@ -1,15 +1,24 @@
+import jwt from "jsonwebtoken";
+
 export const isAuthenticated = (req, res, next) => {
-  console.log("Cookies:", req.cookies);
   if (req.cookies.adminAuth === "authenticated") {
     return next();
   }
-  return res.status(401).json({ cookie: req.cookies, message: "Unauthorized" });
+  return res.status(401).json({ message: "Unauthorized" });
 };
 
 export const isDealerAuthenticated = (req, res, next) => {
-  console.log("Cookies -->", req.cookies);
-  if (req.cookies.subDealerAuth === "authenticated") {
-    return next();
+  const token = req.cookies.dealerToken;
+  console.log(token);
+  if (!token) {
+    return res.status(401).json({ message: "No dealer token provided" });
   }
-  return res.status(401).json({ message: "Unauthorized" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.dealerId = decoded.id;
+    next();
+  } catch (error) {
+    res.status(401).json({ message: "Invalid or expired token" });
+  }
 };

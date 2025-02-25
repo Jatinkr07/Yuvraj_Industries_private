@@ -20,7 +20,7 @@ import {
   deleteProduct,
 } from "../../Services/api.js";
 
-const POLLING_INTERVAL = 3000;
+// const POLLING_INTERVAL = 3000;
 
 const Products = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -66,13 +66,13 @@ const Products = () => {
     fetchProducts();
   }, [fetchProducts]);
 
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      fetchProducts();
-    }, POLLING_INTERVAL);
+  // useEffect(() => {
+  //   const intervalId = setInterval(() => {
+  //     fetchProducts();
+  //   }, POLLING_INTERVAL);
 
-    return () => clearInterval(intervalId);
-  }, [fetchProducts]);
+  //   return () => clearInterval(intervalId);
+  // }, [fetchProducts]);
 
   const handleCreate = async (values) => {
     try {
@@ -236,12 +236,12 @@ const Products = () => {
       width: 120,
       render: (date) => new Date(date).toLocaleDateString(),
     },
-    {
-      title: "Quantity",
-      dataIndex: "quantity",
-      key: "quantity",
-      width: 120,
-    },
+    // {
+    //   title: "Quantity",
+    //   dataIndex: "quantity",
+    //   key: "quantity",
+    //   width: 120,
+    // },
     {
       title: "Actions",
       key: "action",

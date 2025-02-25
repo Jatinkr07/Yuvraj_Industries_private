@@ -9,7 +9,6 @@ import {
   EyeOutlined,
   ArrowLeftOutlined,
 } from "@ant-design/icons";
-
 import { Link } from "react-router-dom";
 import FormModalSub from "./SubDealerData/FormModalSub";
 import SubDealerModal from "./SubDealerData/SubDealerModal";
@@ -23,6 +22,7 @@ const Dealers = () => {
   const [showProducts, setShowProducts] = useState(false);
   const [selectedDealer, setSelectedDealer] = useState(null);
   const [dealers, setDealers] = useState([]);
+  const [editDealerData, setEditDealerData] = useState(null);
 
   useEffect(() => {
     fetchDealers();
@@ -37,6 +37,8 @@ const Dealers = () => {
         name: `${dealer.firstName} ${dealer.lastName}`,
         phoneNumber: dealer.phoneNumber,
         email: dealer.email,
+        firstName: dealer.firstName,
+        lastName: dealer.lastName,
       }));
       setDealers(formattedData);
     } catch (error) {
@@ -51,6 +53,11 @@ const Dealers = () => {
     } catch (error) {
       console.error("Error deleting dealer:", error.response?.data?.message);
     }
+  };
+
+  const handleEdit = (record) => {
+    setEditDealerData(record); // Set the dealer data to edit
+    setIsModalOpen(true); // Open the modal
   };
 
   const columns = [
@@ -109,55 +116,16 @@ const Dealers = () => {
       width: 120,
       render: (_, record) => (
         <div className="flex gap-4">
-          <EditOutlined className="text-blue-600 text-lg cursor-pointer" />
+          <EditOutlined
+            className="text-blue-600 text-lg cursor-pointer"
+            onClick={() => handleEdit(record)} // Trigger edit modal with dealer data
+          />
           <DeleteOutlined
             className="text-red-500 text-lg cursor-pointer"
             onClick={() => handleDelete(record.key)}
           />
         </div>
       ),
-    },
-  ];
-
-  const data = [
-    {
-      key: "1",
-      sNo: 1,
-      name: "John Doe",
-      phoneNumber: "+91 9876543210",
-      email: "john.doe@example.com",
-      product: {
-        name: "Sub Dealer 1",
-        email: "subdealer1@example.com",
-        phoneNumber: "+91 9876543211",
-        lastActive: "2023-05-15",
-      },
-    },
-    {
-      key: "2",
-      sNo: 2,
-      name: "Jane Smith",
-      phoneNumber: "+91 8765432109",
-      email: "jane.smith@example.com",
-      product: {
-        name: "Sub Dealer 2",
-        email: "subdealer2@example.com",
-        phoneNumber: "+91 8765432110",
-        lastActive: "2023-05-14",
-      },
-    },
-    {
-      key: "3",
-      sNo: 3,
-      name: "David Johnson",
-      phoneNumber: "+91 7654321098",
-      email: "david.johnson@example.com",
-      product: {
-        name: "Sub Dealer 3",
-        email: "subdealer3@example.com",
-        phoneNumber: "+91 7654321099",
-        lastActive: "2023-05-13",
-      },
     },
   ];
 
@@ -192,7 +160,10 @@ const Dealers = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditDealerData(null); // Clear edit data for new dealer
+              setIsModalOpen(true);
+            }}
             className="bg-blue-600 hover:bg-blue-700"
           >
             Add New
@@ -209,7 +180,6 @@ const Dealers = () => {
               { value: "inactive", label: "Inactive" },
             ]}
           />
-
           <div className="flex-grow">
             <Input
               placeholder="Search"
@@ -231,6 +201,7 @@ const Dealers = () => {
         visible={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onSuccess={fetchDealers}
+        initialData={editDealerData} // Pass dealer data for editing
       />
 
       <SubDealerModal

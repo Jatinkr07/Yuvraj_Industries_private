@@ -1,71 +1,105 @@
 import axios from "axios";
 
-export const API_URL = "https://yuvraj-industries-private-1.onrender.com";
-// export const API_URL = " http://localhost:5500";
+export const API_URL = "http://localhost:5500"; // Remove extra space
 
+// Create a centralized Axios instance with default config
+const api = axios.create({
+  baseURL: API_URL,
+  withCredentials: true, // Enable cookies for all requests
+  headers: {
+    "Content-Type": "application/json", // Default content type
+  },
+});
+
+// Category API Calls
 export const createCategory = (formData) =>
-  axios.post(`${API_URL}/api/categories`, formData);
+  api.post("/api/categories", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 
 export const updateCategory = (id, formData) =>
-  axios.put(`${API_URL}/api/categories/${id}`, formData);
+  api.put(`/api/categories/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 
 export const getCategories = async () => {
-  const response = await axios.get(`${API_URL}/api/categories`);
+  const response = await api.get("/api/categories");
   return response.data;
 };
 
 export const removeCategoryImage = (id) =>
-  axios.delete(`${API_URL}/api/categories/${id}/remove-image`);
+  api.delete(`/api/categories/${id}/remove-image`);
 
-export const deleteCategory = (id) =>
-  axios.delete(`${API_URL}/api/categories/${id}`);
+export const deleteCategory = (id) => api.delete(`/api/categories/${id}`);
 
+// Product API Calls
 export const createProduct = async (formData) => {
-  const response = await axios.post(`${API_URL}/api/products`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
+  const response = await api.post("/api/products", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
   });
   return response.data;
 };
 
 export const getProducts = async (params = {}) => {
   const { page = 1, limit = 10, search = "" } = params;
-  const response = await axios.get(`${API_URL}/api/products`, {
+  const response = await api.get("/api/products", {
     params: { page, limit, search },
   });
   return response.data;
 };
 
 export const updateProduct = async (id, formData) => {
-  const response = await axios.put(`${API_URL}/api/products/${id}`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
+  const response = await api.put(`/api/products/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
   });
   return response.data;
 };
 
 export const deleteProduct = async (id) => {
-  const response = await axios.delete(`${API_URL}/api/products/${id}`);
+  const response = await api.delete(`/api/products/${id}`);
   return response.data;
 };
 
-// Dealer API Calls - Fixed Routes & Consistency
-export const createDealer = (data) =>
-  axios.post(`${API_URL}/api/dealer/create`, data, {
-    withCredentials: true,
-  });
+// Dealer API Calls
+export const createDealer = (data) => api.post("/api/dealer/create", data);
 
-export const dealerLogin = (data) =>
-  axios.post(`${API_URL}/api/dealer/login`, data, {
-    withCredentials: true,
-  });
+export const dealerLogin = async (data) => {
+  const response = await api.post("/api/dealer/login", data);
+  return response.data;
+};
 
-export const getDealers = () =>
-  axios.get(`${API_URL}/api/dealer/list`, {
-    withCredentials: true,
-  });
+export const getDealers = () => api.get("/api/dealer/list");
 
-export const deleteDealer = (id) =>
-  axios.delete(`${API_URL}/api/dealer/${id}`, { withCredentials: true });
+export const updateDealer = (id, data) => api.put(`/api/dealer/${id}`, data);
+
+export const deleteDealer = (id) => api.delete(`/api/dealer/${id}`);
+
+// Dealer Product API Calls
+export const assignProductToDealer = async (data) => {
+  const response = await api.post("/api/products/assign", data);
+  return response.data;
+};
+
+export const getDealerProducts = async () => {
+  const response = await api.get("/api/dealer/products");
+  return response.data;
+};
+
+// Sale API Calls
+export const createSale = (data) => api.post("/api/sale/create", data);
+
+export const getSales = () => api.get("/api/sale/list");
+
+export const replaceProduct = (saleId) =>
+  api.put(`/api/sale/replace/${saleId}`, {});
+
+// Error Handling Interceptor
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const message = error.response?.data?.message || "An error occurred";
+    return Promise.reject(new Error(message));
+  }
+);
+
+export default api;

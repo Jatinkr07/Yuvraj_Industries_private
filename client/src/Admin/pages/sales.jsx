@@ -39,110 +39,6 @@ const data = [
     replaced: "Replace",
     disabled: false,
   },
-  {
-    key: "3",
-    sNo: 3,
-    productSNo: "P-1003",
-    productName: "Dell Inspiron 15",
-    barcode: <QrcodeOutlined className="text-2xl" />,
-    dealerName: "Tech World",
-    warrantyPeriod: "3 Years",
-    warrantyLeft: "2 Years 4 Months",
-    status: "In Warranty",
-    replaced: "Replace",
-    disabled: false,
-  },
-  {
-    key: "4",
-    sNo: 4,
-    productSNo: "P-1004",
-    productName: "Sony Bravia TV",
-    barcode: <QrcodeOutlined className="text-2xl" />,
-    dealerName: "Home Appliances",
-    warrantyPeriod: "2 Years",
-    warrantyLeft: "8 Months",
-    status: "In Warranty",
-    replaced: "Replace",
-    disabled: false,
-  },
-  {
-    key: "5",
-    sNo: 5,
-    productSNo: "P-1005",
-    productName: "HP Pavilion x360",
-    barcode: <QrcodeOutlined className="text-2xl" />,
-    dealerName: "Laptop Hub",
-    warrantyPeriod: "1 Year",
-    warrantyLeft: "Expired",
-    status: "Out of Warranty",
-    replaced: "Replace",
-    disabled: true,
-  },
-  {
-    key: "6",
-    sNo: 6,
-    productSNo: "P-1006",
-    productName: "OnePlus 9 Pro",
-    barcode: <QrcodeOutlined className="text-2xl" />,
-    dealerName: "Smartphone Plaza",
-    warrantyPeriod: "2 Years",
-    warrantyLeft: "1 Year",
-    status: "In Warranty",
-    replaced: "Replace",
-    disabled: false,
-  },
-  {
-    key: "7",
-    sNo: 7,
-    productSNo: "P-1007",
-    productName: "Bose Soundbar 700",
-    barcode: <QrcodeOutlined className="text-2xl" />,
-    dealerName: "Music World",
-    warrantyPeriod: "1 Year",
-    warrantyLeft: "2 Months",
-    status: "In Warranty",
-    replaced: "Replace",
-    disabled: false,
-  },
-  {
-    key: "8",
-    sNo: 8,
-    productSNo: "P-1008",
-    productName: "Canon EOS R5",
-    barcode: <QrcodeOutlined className="text-2xl" />,
-    dealerName: "Camera Store",
-    warrantyPeriod: "3 Years",
-    warrantyLeft: "2 Years",
-    status: "In Warranty",
-    replaced: "Replace",
-    disabled: false,
-  },
-  {
-    key: "9",
-    sNo: 9,
-    productSNo: "P-1009",
-    productName: "LG Refrigerator",
-    barcode: <QrcodeOutlined className="text-2xl" />,
-    dealerName: "Home Needs",
-    warrantyPeriod: "5 Years",
-    warrantyLeft: "3 Years 7 Months",
-    status: "In Warranty",
-    replaced: "Replace",
-    disabled: false,
-  },
-  {
-    key: "10",
-    sNo: 10,
-    productSNo: "P-1010",
-    productName: "Asus ROG Strix",
-    barcode: <QrcodeOutlined className="text-2xl" />,
-    dealerName: "Gaming World",
-    warrantyPeriod: "2 Years",
-    warrantyLeft: "Expired",
-    status: "Out of Warranty",
-    replaced: "Replace",
-    disabled: true,
-  },
 ];
 
 const Sales = () => {
@@ -232,6 +128,7 @@ const Sales = () => {
     filterData(selectedDateRange, value, dealerProduct);
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleDealerChange = (value) => {
     setDealerProduct(value);
     filterData(selectedDateRange, value);
@@ -278,11 +175,7 @@ const Sales = () => {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold">Sales List</h1>
-          {/* <Input
-            placeholder="Enter Data"
-            style={{ width: 200 }}
-            className="mr-4"
-          /> */}
+
           <Space>
             <Button type="primary" onClick={exportToExcel}>
               Export to Excel
@@ -298,12 +191,11 @@ const Sales = () => {
           <Table
             columns={columns}
             dataSource={filteredData}
-            pagination={{ pageSize: 10 }}
+            pagination={{ pageSize: 8 }}
             scroll={{ x: 1200, y: 500 }}
           />
         </div>
         <div className="flex gap-8 mb-6 lg:ml-60">
-          {/* <RangePicker onChange={handleDateRangeChange} /> */}
           <Select
             placeholder="Select Product"
             style={{ width: 200 }}
@@ -317,17 +209,6 @@ const Sales = () => {
               )
             )}
           </Select>
-          {/* <Select
-            placeholder="Select Dealer Name"
-            style={{ width: 200 }}
-            onChange={handleDealerChange}
-          >
-            {[...new Set(data.map((item) => item.dealerName))].map((dealer) => (
-              <Option key={dealer} value={dealer}>
-                {dealer}
-              </Option>
-            ))}
-          </Select> */}
         </div>
       </div>
     </div>

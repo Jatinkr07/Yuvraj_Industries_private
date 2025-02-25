@@ -5,13 +5,16 @@ import busboy from "busboy";
 
 const uploadDir = path.join("uploads", "products");
 
-// Ensure upload directory exists
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 const generateUniqueBarcode = () => {
-  return `${Date.now()}${Math.floor(Math.random() * 10000)}`;
+  const timestamp = Date.now().toString();
+  const random = Math.floor(Math.random() * 10000)
+    .toString()
+    .padStart(4, "0");
+  return `PRD-${timestamp}-${random}`;
 };
 
 const handleFileUpload = (req) => {
@@ -78,6 +81,8 @@ export const createProduct = async (req, res) => {
       description: fields.description,
       images,
       addedOn: new Date(),
+      assignedTo: null,
+      isAssigned: false,
     };
 
     for (let i = 0; i < qty; i++) {
@@ -99,6 +104,52 @@ export const createProduct = async (req, res) => {
     res
       .status(500)
       .json({ message: "Failed to create products", error: error.message });
+  }
+};
+
+// ProductController.js
+export const assignProductToDealer = async (req, res) => {
+  try {
+    const { code } = req.body;
+    const dealerId = req.dealerId;
+
+    console.log("Received code for assignment:", code);
+    console.log("Dealer ID:", dealerId);
+
+    // Search by exact match or base serial number with suffix
+    const product = await Product.findOne({
+      $or: [
+        { barcode: code },
+        { serialNumber: code },
+        { serialNumber: { $regex: new RegExp(`^${code}-\\d{3}$`) } }, // Match TEST-001-XXX
+      ],
+    });
+
+    console.log("Found product:", product || "None");
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    if (product.isAssigned) {
+      return res.status(400).json({ message: "Product already assigned" });
+    }
+
+    const updatedProduct = await Product.findOneAndUpdate(
+      { _id: product._id },
+      { assignedTo: dealerId, isAssigned: true, assignedAt: new Date() },
+      { new: true }
+    ).populate("category", "name");
+
+    res.status(200).json({
+      message: "Product assigned successfully",
+      product: updatedProduct,
+    });
+  } catch (error) {
+    console.error("Error assigning product:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to assign product", error: error.message });
   }
 };
 
