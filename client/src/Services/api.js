@@ -76,15 +76,18 @@ export const deleteDealer = (id) => api.delete(`/api/dealer/${id}`);
 
 // Dealer Product API Calls
 export const assignProductToDealer = async (data) => {
+  console.log("API --->", data);
   const response = await api.post("/api/products/assign", data);
+  console.log("API Res ---->", response.data);
   return response.data;
 };
 
-export const getDealerProducts = async () => {
-  const response = await api.get("/api/dealer/products");
+export const getDealerProducts = async (dealerId) => {
+  const response = await api.get(
+    dealerId ? `/api/dealer/products/${dealerId}` : "/api/dealer/products"
+  );
   return response.data;
 };
-
 // Sale API Calls
 export const createSale = (data) => api.post("/api/sale/create", data);
 

@@ -9,7 +9,7 @@ export const isAuthenticated = (req, res, next) => {
 
 export const isDealerAuthenticated = (req, res, next) => {
   const token = req.cookies.dealerToken;
-  console.log(token);
+
   if (!token) {
     return res.status(401).json({ message: "No dealer token provided" });
   }

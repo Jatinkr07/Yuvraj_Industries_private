@@ -51,39 +51,25 @@ const Dealers = () => {
       await deleteDealer(id);
       setDealers(dealers.filter((dealer) => dealer.key !== id));
     } catch (error) {
-      console.error("Error deleting dealer:", error.response?.data?.message);
+      console.error("Error deleting dealer:", error.message);
     }
   };
 
   const handleEdit = (record) => {
-    setEditDealerData(record); // Set the dealer data to edit
-    setIsModalOpen(true); // Open the modal
+    setEditDealerData(record);
+    setIsModalOpen(true);
   };
 
   const columns = [
-    {
-      title: "S. No.",
-      dataIndex: "sNo",
-      key: "sNo",
-      width: 100,
-    },
-    {
-      title: "Name",
-      dataIndex: "name",
-      key: "name",
-    },
+    { title: "S. No.", dataIndex: "sNo", key: "sNo", width: 100 },
+    { title: "Name", dataIndex: "name", key: "name" },
     {
       title: "Phone Number",
       dataIndex: "phoneNumber",
       key: "phoneNumber",
       width: 180,
     },
-    {
-      title: "Email ID",
-      dataIndex: "email",
-      key: "email",
-      width: 250,
-    },
+    { title: "Email ID", dataIndex: "email", key: "email", width: 250 },
     {
       title: "Products",
       dataIndex: "product",
@@ -118,7 +104,7 @@ const Dealers = () => {
         <div className="flex gap-4">
           <EditOutlined
             className="text-blue-600 text-lg cursor-pointer"
-            onClick={() => handleEdit(record)} // Trigger edit modal with dealer data
+            onClick={() => handleEdit(record)}
           />
           <DeleteOutlined
             className="text-red-500 text-lg cursor-pointer"
@@ -129,13 +115,13 @@ const Dealers = () => {
     },
   ];
 
-  if (showProducts) {
+  if (showProducts && selectedDealer) {
     return (
       <div className="bg-gray-50 min-h-screen">
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl text-black font-semibold">
-              Products - {selectedDealer?.name}
+              Products - {selectedDealer.name}
             </h1>
             <Button
               type="default"
@@ -146,7 +132,11 @@ const Dealers = () => {
               Back to Dealers
             </Button>
           </div>
-          <ProductsPage />
+          <ProductsPage
+            dealerId={selectedDealer.key}
+            dealerName={selectedDealer.name}
+            isAdminView={true}
+          />
         </div>
       </div>
     );
@@ -161,7 +151,7 @@ const Dealers = () => {
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => {
-              setEditDealerData(null); // Clear edit data for new dealer
+              setEditDealerData(null);
               setIsModalOpen(true);
             }}
             className="bg-blue-600 hover:bg-blue-700"
@@ -201,7 +191,7 @@ const Dealers = () => {
         visible={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onSuccess={fetchDealers}
-        initialData={editDealerData} // Pass dealer data for editing
+        initialData={editDealerData}
       />
 
       <SubDealerModal

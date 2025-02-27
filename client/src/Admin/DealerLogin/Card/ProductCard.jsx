@@ -25,7 +25,7 @@ export default function ProductCard({ product }) {
   });
 
   return (
-    <Card className="w-[1550px] grid grid-cols-1 lg:grid-cols-2 mx-auto border-2 border-black gap-12">
+    <Card className="max-w-9xl container grid grid-cols-1 lg:grid-cols-2 mx-auto border-2 border-black gap-12">
       <div className="border-black border-r-2 border-t-2 border-l-2 p-3.5 text-center ">
         <h1 className="text-[13px] md:text-[22px] font-bold text-black text-nowrap">
           MFD. BY - YUVRAJ INDUSTRIES, FARIDABAD, HARYANA

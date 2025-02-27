@@ -76,7 +76,11 @@ export const getDealers = async (req, res) => {
 
 export const getDealerProducts = async (req, res) => {
   try {
-    const dealerId = req.dealerId;
+    const dealerId = req.params.dealerId || req.dealerId;
+    if (!dealerId) {
+      return res.status(400).json({ message: "Dealer ID is required" });
+    }
+
     const products = await Product.find({ assignedTo: dealerId })
       .populate("category", "name")
       .sort({ assignedAt: -1 });

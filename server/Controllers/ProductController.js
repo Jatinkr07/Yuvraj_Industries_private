@@ -16,6 +16,7 @@ const generateUniqueBarcode = () => {
     .padStart(4, "0");
   return `PRD-${timestamp}-${random}`;
 };
+console.log("PRD- barcode", generateUniqueBarcode());
 
 const handleFileUpload = (req) => {
   return new Promise((resolve, reject) => {
@@ -107,31 +108,37 @@ export const createProduct = async (req, res) => {
   }
 };
 
-// ProductController.js
 export const assignProductToDealer = async (req, res) => {
   try {
     const { code } = req.body;
     const dealerId = req.dealerId;
 
-    console.log("Received code for assignment:", code);
-    console.log("Dealer ID:", dealerId);
+    console.log("[Backend] Received code for assignment:", code);
+    console.log("[Backend] Dealer ID:", dealerId);
 
-    // Search by exact match or base serial number with suffix
-    const product = await Product.findOne({
-      $or: [
-        { barcode: code },
-        { serialNumber: code },
-        { serialNumber: { $regex: new RegExp(`^${code}-\\d{3}$`) } }, // Match TEST-001-XXX
-      ],
+    if (!code) {
+      console.log("[Backend] Error: No code provided");
+      return res
+        .status(400)
+        .json({ message: "No barcode or serial number provided" });
+    }
+
+    let product = await Product.findOne({
+      $or: [{ barcode: code }, { serialNumber: code }],
     });
 
-    console.log("Found product:", product || "None");
+    console.log("[Backend] Found product:", product ? product : "None");
 
     if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+      console.log("[Backend] Product not found for code:", code);
+      return res.status(404).json({
+        message:
+          "Product not found. Ensure the barcode or serial number exists.",
+      });
     }
 
     if (product.isAssigned) {
+      console.log("[Backend] Product already assigned:", product._id);
       return res.status(400).json({ message: "Product already assigned" });
     }
 
@@ -141,15 +148,18 @@ export const assignProductToDealer = async (req, res) => {
       { new: true }
     ).populate("category", "name");
 
+    console.log("[Backend] Product assigned successfully:", updatedProduct);
+
     res.status(200).json({
       message: "Product assigned successfully",
       product: updatedProduct,
     });
   } catch (error) {
-    console.error("Error assigning product:", error);
-    res
-      .status(500)
-      .json({ message: "Failed to assign product", error: error.message });
+    console.error("[Backend] Error assigning product:", error.message);
+    res.status(500).json({
+      message: "Failed to assign product",
+      error: error.message,
+    });
   }
 };
 

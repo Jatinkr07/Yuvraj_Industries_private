@@ -138,8 +138,8 @@ const App = () => {
           {/* Content */}
           <Content
             style={{
-              margin: 10,
-              padding: 24,
+              margin: 4,
+              padding: 4,
               background: "#ffffff",
               borderRadius: "8px",
               flex: 1,

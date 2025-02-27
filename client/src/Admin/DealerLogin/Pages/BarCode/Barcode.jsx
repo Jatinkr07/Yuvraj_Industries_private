@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button, Modal, Input, message } from "antd";
 import Scanner from "react-qr-barcode-scanner";
 
-export default function QRScanner() {
+export default function Barcode() {
   const [data, setData] = useState(null);
   const [serialNumber, setSerialNumber] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
