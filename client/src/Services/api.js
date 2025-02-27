@@ -1,13 +1,13 @@
 import axios from "axios";
 
-export const API_URL = "http://localhost:5500"; // Remove extra space
+// export const API_URL = "http://localhost:5500";
+export const API_URL = "https://yuvraj-industries-private.onrender.com";
 
-// Create a centralized Axios instance with default config
 const api = axios.create({
   baseURL: API_URL,
-  withCredentials: true, // Enable cookies for all requests
+  withCredentials: true,
   headers: {
-    "Content-Type": "application/json", // Default content type
+    "Content-Type": "application/json",
   },
 });
 
