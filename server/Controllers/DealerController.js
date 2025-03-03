@@ -49,10 +49,10 @@ export const dealerLogin = async (req, res) => {
     res.cookie("dealerToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: 3600000,
     });
-
+    console.log("Login --> token -->", token);
     res.status(200).json({
       message: "Login successful",
       dealerId: dealer._id,

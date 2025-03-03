@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
@@ -101,12 +102,12 @@ export default function ProductsPage({
             filteredProducts.map((product) => (
               <Col
                 key={product._id}
-                xs={24}
-                sm={12}
-                md={12}
-                lg={8}
-                xl={24}
-                className="flex  justify-center"
+                xs={24} // 1 card per row on extra small screens
+                sm={12} // 2 cards per row on small screens
+                md={12} // 2 cards per row on medium screens
+                lg={12} // 2 cards per row on large screens
+                xl={24} // 2 cards per row on extra large screens
+                className="flex justify-center"
               >
                 <ProductCard product={product} />
               </Col>

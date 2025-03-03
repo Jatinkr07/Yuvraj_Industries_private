@@ -22,7 +22,7 @@ import Dashboard1 from "./Admin/SubDealer/Sidebar/Dashboard";
 import ProductsPage1 from "./Admin/SubDealer/Pages/ProductsPage";
 import SalesPage1 from "./Admin/SubDealer/Pages/SalesPage";
 import ReplacedPage1 from "./Admin/SubDealer/Pages/ReplacedPage";
-import Login1 from "./Admin/SubDealer/Login";
+import Login1 from "./Admin/DealerLogin/SubDealer/SubDealerLogin";
 import Barcode1 from "./Admin/SubDealer/Pages/BarCode/Barcode";
 import ChangePassword1 from "./Admin/SubDealer/ChangePassword";
 import SubDealerTable1 from "./Admin/SubDealer/SubDealer/SubDealerTable";
@@ -48,12 +48,8 @@ const router = createBrowserRouter(
     <>
       {/* Unprotected Home Route */}
       <Route path="/" element={<div>Home</div>} />
-
-      {/* Dealer Routes Start */}
       <Route path="/dealer">
-        {/* Unprotected Login Route */}
         <Route path="login" element={<Login />} />
-        {/* Protected Routes */}
         <Route element={<ProtectedRoute role="dealer" />}>
           <Route index element={<Navigate to="/dealer/dashboard" replace />} />
           <Route
@@ -117,64 +113,71 @@ const router = createBrowserRouter(
       {/* Dealer Routes End */}
 
       {/* Sub Dealer Routes (Unchanged) */}
-      <Route path="/subdealer/login" element={<Login1 />} />
-      <Route
-        path="/subdealer"
-        element={
-          <MainLayout1>
-            <Dashboard1 />
-          </MainLayout1>
-        }
-      />
-      <Route
-        path="subdealer/dashboard"
-        element={
-          <MainLayout1>
-            <Dashboard1 />
-          </MainLayout1>
-        }
-      />
-      <Route
-        path="/subdealer/products"
-        element={
-          <MainLayout1>
-            <ProductsPage1 />
-          </MainLayout1>
-        }
-      />
-      <Route
-        path="subdealer/sales"
-        element={
-          <MainLayout1>
-            <SalesPage1 />
-          </MainLayout1>
-        }
-      />
-      <Route
-        path="subdealer/replaced"
-        element={
-          <MainLayout1>
-            <ReplacedPage1 />
-          </MainLayout1>
-        }
-      />
-      <Route
-        path="/subdealer/barcode"
-        element={
-          <MainLayout1>
-            <Barcode1 />
-          </MainLayout1>
-        }
-      />
-      <Route
-        path="/subdealers/v1"
-        element={
-          <MainLayout1>
-            <SubDealerTable1 />
-          </MainLayout1>
-        }
-      />
-      <Route path="/subdealer/change/password" element={<ChangePassword1 />} />
+      <Route path="/subdealer">
+        <Route path="login" element={<Login1 />} />
+        <Route element={<ProtectedRoute role="subdealer" />}>
+          <Route
+            index
+            element={<Navigate to="/subdealer/dashboard" replace />}
+          />
+          <Route
+            path="dashboard"
+            element={
+              <MainLayout1>
+                <Dashboard1 />
+              </MainLayout1>
+            }
+          />
+          <Route
+            path="products"
+            element={
+              <MainLayout1>
+                <ProductsPage1 />
+              </MainLayout1>
+            }
+          />
+          <Route
+            path="sales"
+            element={
+              <MainLayout1>
+                <SalesPage1 />
+              </MainLayout1>
+            }
+          />
+          <Route
+            path="replaced"
+            element={
+              <MainLayout1>
+                <ReplacedPage1 />
+              </MainLayout1>
+            }
+          />
+          <Route
+            path="barcode"
+            element={
+              <MainLayout1>
+                <Barcode1 />
+              </MainLayout1>
+            }
+          />
+          <Route
+            path="subdealers/v1"
+            element={
+              <MainLayout1>
+                <SubDealerTable1 />
+              </MainLayout1>
+            }
+          />
+          <Route
+            path="change/password"
+            element={
+              <MainLayout1>
+                <ChangePassword1 />
+              </MainLayout1>
+            }
+          />
+        </Route>
+      </Route>
 
       {/* Admin Routes Start */}
       <Route path="/admin/login" element={<AdminLogin />} />

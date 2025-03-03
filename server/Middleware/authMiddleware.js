@@ -8,7 +8,7 @@ export const isAuthenticated = (req, res, next) => {
 };
 
 export const isDealerAuthenticated = (req, res, next) => {
-  const token = req.cookies.dealerToken;
+  const token = req.cookies?.dealerToken;
 
   if (!token) {
     return res.status(401).json({ message: "No dealer token provided" });
@@ -17,6 +17,22 @@ export const isDealerAuthenticated = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.dealerId = decoded.id;
+    next();
+  } catch (error) {
+    res.status(401).json({ message: "Invalid or expired token" });
+  }
+};
+
+export const isSubDealerAuthenticated = (req, res, next) => {
+  const token = req.cookies.subDealerToken;
+
+  if (!token) {
+    return res.status(401).json({ message: "No sub-dealer token provided" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.subDealerId = decoded.id;
     next();
   } catch (error) {
     res.status(401).json({ message: "Invalid or expired token" });

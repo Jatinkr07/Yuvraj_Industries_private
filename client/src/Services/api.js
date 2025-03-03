@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// export const API_URL = "http://localhost:5500";
-export const API_URL = "https://yuvraj-industries-private.onrender.com";
+export const API_URL = "http://localhost:5500";
+// export const API_URL = "https://yuvraj-industries-private.onrender.com";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -73,6 +73,11 @@ export const getDealers = () => api.get("/api/dealer/list");
 export const updateDealer = (id, data) => api.put(`/api/dealer/${id}`, data);
 
 export const deleteDealer = (id) => api.delete(`/api/dealer/${id}`);
+
+export const createSubDealer = (data) =>
+  api.post("/api/dealer/subdealer/create", data);
+export const updateSubDealer = (id, data) =>
+  api.put(`/api/dealer/subdealer/${id}`, data);
 
 // Dealer Product API Calls
 export const assignProductToDealer = async (data) => {

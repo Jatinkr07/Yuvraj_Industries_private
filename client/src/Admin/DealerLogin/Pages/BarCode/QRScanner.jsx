@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react/prop-types */
 import { useState, useEffect, useRef } from "react";
 import { Modal, Input, Button, message } from "antd";
 import { QrcodeOutlined } from "@ant-design/icons";
@@ -25,20 +27,27 @@ export default function QRScanner({ isOpen, onClose, onScanSuccess }) {
       html5QrCodeRef.current = new Html5Qrcode(scannerRef.current.id);
 
       const config = {
-        fps: 15,
-        qrbox: { width: 300, height: 200 },
-        aspectRatio: 1.5,
+        fps: 20,
+        qrbox: { width: 350, height: 200 },
+        aspectRatio: 1.75,
         formatsToSupport: ["CODE_128"],
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true,
         },
+        disableFlip: false,
       };
 
       await html5QrCodeRef.current.start(
         cameraId,
         config,
-        (decodedText) => {
-          console.log("[Html5Qrcode] Detected barcode:", decodedText);
+        (decodedText, decodedResult) => {
+          console.log("[Html5Qrcode] Detected barcode:", {
+            decodedText,
+            confidence: decodedResult?.confidence || "N/A",
+            format: decodedResult?.format || "N/A",
+            rawBytes: decodedResult?.rawBytes || "N/A",
+          });
+
           const isValidFormat =
             /^PRD-\d+-\d{4}$/.test(decodedText) && decodedText.length > 10;
           if (isValidFormat) {
@@ -52,19 +61,25 @@ export default function QRScanner({ isOpen, onClose, onScanSuccess }) {
             setError(
               "Invalid barcode format. Expected: PRD-<timestamp>-<random>"
             );
-            console.warn("[Html5Qrcode] Invalid format:", decodedText);
+            console.warn("[Html5Qrcode] Invalid format detected:", decodedText);
           }
         },
         (errorMessage) => {
-          // Log scan errors but continue scanning
-          if (!errorMessage.includes("No MultiFormat Readers")) {
-            console.log("[Html5Qrcode] Scan error:", errorMessage);
-          }
+          console.log("[Html5Qrcode] Scan error:", {
+            message: errorMessage,
+            timestamp: new Date().toISOString(),
+          });
         }
       );
-      console.log("[Html5Qrcode] Scanner started successfully");
+      console.log(
+        "[Html5Qrcode] Scanner started successfully with config:",
+        config
+      );
     } catch (err) {
-      console.error("[Html5Qrcode] Error starting scanner:", err);
+      console.error("[Html5Qrcode] Error starting scanner:", {
+        message: err.message,
+        stack: err.stack,
+      });
       setError(
         `Camera error: ${err.message || "Permission denied or no camera"}`
       );
@@ -72,7 +87,6 @@ export default function QRScanner({ isOpen, onClose, onScanSuccess }) {
     }
   };
 
-  // Stop the scanner
   const stopScanning = () => {
     if (
       html5QrCodeRef.current &&
@@ -93,13 +107,12 @@ export default function QRScanner({ isOpen, onClose, onScanSuccess }) {
   useEffect(() => {
     if (isOpen) {
       console.log("[Html5Qrcode] Starting scanner...");
-      scannerRef.current.id = "html5-qrcode-scanner"; // Ensure a unique ID
+      scannerRef.current.id = "html5-qrcode-scanner";
       startScanning();
     } else {
       stopScanning();
     }
 
-    // Cleanup on unmount or modal close
     return () => {
       console.log("[Html5Qrcode] Cleanup triggered");
       stopScanning();

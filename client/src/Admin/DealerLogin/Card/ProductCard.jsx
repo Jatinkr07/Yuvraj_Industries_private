@@ -25,17 +25,20 @@ export default function ProductCard({ product }) {
   });
 
   return (
-    <Card className="max-w-9xl container grid grid-cols-1 lg:grid-cols-2 mx-auto border-2 border-black gap-12">
-      <div className="border-black border-r-2 border-t-2 border-l-2 p-3.5 text-center ">
+    <Card className="w-full max-w-md lg:max-w-full  grid grid-cols-1 lg:grid-cols-2 mx-auto border-2 border-black gap-4">
+      {/* Header */}
+      <div className="border-black border-t-2 border-l-2 border-r-2 p-3.5 text-center">
         <h1 className="text-[13px] md:text-[22px] font-bold text-black text-nowrap">
           MFD. BY - YUVRAJ INDUSTRIES, FARIDABAD, HARYANA
         </h1>
       </div>
 
-      <div className="grid grid-cols-2 border-t-2 border-black text-black">
-        <div className="border-r-2 border-black">
+      {/* Product Details Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-2 border-t-2 border-black text-black">
+        {/* Left Section */}
+        <div className="border-black lg:border-r-2">
           <div className="border-b-2 border-black border-l-2 p-3 text-center">
-            <h2 className="font-bold text-xs lg:text-[14px] uppercase">
+            <h2 className="font-[500] text-[10px] lg:text-[12.5px] uppercase">
               {productName}
             </h2>
           </div>
@@ -54,6 +57,7 @@ export default function ProductCard({ product }) {
           ))}
         </div>
 
+        {/* Right Section */}
         <div>
           <div className="border-b-2 border-black p-3 text-center border-r-2 text-black">
             <div className="lg:text-[12px] text-[10px] text-nowrap">
@@ -76,7 +80,8 @@ export default function ProductCard({ product }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 border-t-2 border-black border-l-2 border-b-2 border-r-2 text-black">
+      {/* Footer Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 border-t-2 border-black border-l-2 border-b-2 border-r-2 text-black">
         <div className="p-4 border-r-2 border-black">
           <div className="font-bold lg:text-lg text-[13px]">
             S.R. NO. - {serialNumber}

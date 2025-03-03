@@ -13,6 +13,14 @@ import {
   isDealerAuthenticated,
 } from "../Middleware/authMiddleware.js";
 
+import {
+  createSubDealer,
+  subDealerLogin,
+  getSubDealers,
+  updateSubDealer,
+  deleteSubDealer,
+} from "../Controllers/SubDealerController.js";
+
 const router = express.Router();
 
 router.post("/create", isAuthenticated, createDealer);
@@ -22,5 +30,16 @@ router.delete("/:id", isAuthenticated, deleteDealer);
 router.put("/:id", isAuthenticated, updateDealer);
 router.get("/products", isDealerAuthenticated, getDealerProducts);
 router.get("/products/:dealerId", isAuthenticated, getDealerProducts);
+
+//Sub-Dealer
+router.post("/subdealer/create", isDealerAuthenticated, createSubDealer);
+router.post("/subdealer/login", subDealerLogin);
+router.get("/subdealer/subdealers", isDealerAuthenticated, getSubDealers);
+router.put("/subdealer/subdealer/:id", isDealerAuthenticated, updateSubDealer);
+router.delete(
+  "/subdealer/subdealer/:id",
+  isDealerAuthenticated,
+  deleteSubDealer
+);
 
 export default router;

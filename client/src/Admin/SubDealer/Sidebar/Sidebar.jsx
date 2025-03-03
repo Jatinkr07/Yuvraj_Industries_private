@@ -10,6 +10,7 @@ import {
   LogoutOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
+import Cookies from "js-cookie";
 
 const { Sider } = Layout;
 
@@ -78,7 +79,16 @@ export default function Sidebar({ collapsed, isMobile, onClose, siderWidth }) {
   };
 
   const handleMenuClick = (e) => {
-    navigate(e.key);
+    if (e.key === "/logout") {
+      // Remove subdealer cookies
+      Cookies.remove("subDealerToken");
+      Cookies.remove("subdealerAuth");
+      // Redirect to login page
+      navigate("/subdealer/login");
+    } else {
+      navigate(e.key);
+    }
+
     if (isMobile) {
       onClose?.();
     }

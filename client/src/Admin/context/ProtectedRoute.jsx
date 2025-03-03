@@ -1,14 +1,29 @@
 /* eslint-disable react/prop-types */
-
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import Cookies from "js-cookie";
 
 const ProtectedRoute = ({ role = "admin" }) => {
   const location = useLocation();
-  const authCookie =
-    role === "admin" ? Cookies.get("adminAuth") : Cookies.get("dealerAuth");
-  const redirectPath = role === "admin" ? "/admin/login" : "/dealer/login";
-  const isAuthenticated = authCookie === "authenticated";
+
+  const authConfig = {
+    admin: {
+      cookie: "adminAuth",
+      redirect: "/admin/login",
+    },
+    dealer: {
+      cookie: "dealerAuth",
+      redirect: "/dealer/login",
+    },
+    subdealer: {
+      cookie: "subDealerToken",
+      redirect: "/subdealer/login",
+    },
+  };
+
+  const currentAuth = authConfig[role];
+  const authCookie = Cookies.get(currentAuth.cookie);
+  const isAuthenticated =
+    role === "subdealer" ? !!authCookie : authCookie === "authenticated";
 
   console.log(`Checking ${role} authentication:`, {
     authCookie,
@@ -17,8 +32,12 @@ const ProtectedRoute = ({ role = "admin" }) => {
   });
 
   if (!isAuthenticated) {
-    console.log(`Redirecting to ${redirectPath} from ${location.pathname}`);
-    return <Navigate to={redirectPath} state={{ from: location }} replace />;
+    console.log(
+      `Redirecting to ${currentAuth.redirect} from ${location.pathname}`
+    );
+    return (
+      <Navigate to={currentAuth.redirect} state={{ from: location }} replace />
+    );
   }
 
   return <Outlet />;

@@ -1,11 +1,6 @@
 import { motion } from "framer-motion";
 import { Card, Row, Col } from "antd";
-import {
-  ShopOutlined,
-  TeamOutlined,
-  FileTextOutlined,
-  SyncOutlined,
-} from "@ant-design/icons";
+import { ShopOutlined, FileTextOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 
 export default function Dashboard() {
@@ -14,26 +9,15 @@ export default function Dashboard() {
       icon: <ShopOutlined style={{ fontSize: 24, color: "#16a34a" }} />,
       label: "Products",
       description: "Manage inventory",
-      href: "/dealer/products",
+      href: "/subdealer/products",
     },
-    // {
-    //   icon: <TeamOutlined style={{ fontSize: 24, color: "#16a34a" }} />,
-    //   label: "Sub Dealers",
-    //   description: "Dealer management",
-    //   href: "/sub-dealers",
-    // },
+
     {
       icon: <FileTextOutlined style={{ fontSize: 24, color: "#16a34a" }} />,
       label: "Sales",
       description: "Sales records",
-      href: "/sales",
+      href: "/subdealer/sales",
     },
-    // {
-    //   icon: <SyncOutlined style={{ fontSize: 24, color: "#16a34a" }} />,
-    //   label: "Replaced",
-    //   description: "Replacement history",
-    //   href: "/replaced",
-    // },
   ];
 
   return (
