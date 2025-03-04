@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const API_URL = "http://localhost:5500";
+export const API_URL = "http://localhost:6600";
 // export const API_URL = "https://yuvraj-industries-private.onrender.com";
 
 const api = axios.create({
@@ -81,9 +81,8 @@ export const updateSubDealer = (id, data) =>
 
 // Dealer Product API Calls
 export const assignProductToDealer = async (data) => {
-  console.log("API --->", data);
   const response = await api.post("/api/products/assign", data);
-  console.log("API Res ---->", response.data);
+
   return response.data;
 };
 
@@ -94,9 +93,9 @@ export const getDealerProducts = async (dealerId) => {
   return response.data;
 };
 // Sale API Calls
-export const createSale = (data) => api.post("/api/sale/create", data);
+// export const createSale = (data) => api.post("/api/sale/create", data);
 
-export const getSales = () => api.get("/api/sale/list");
+// export const getSales = () => api.get("/api/sale/list");
 
 export const replaceProduct = (saleId) =>
   api.put(`/api/sale/replace/${saleId}`, {});
@@ -111,3 +110,15 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+//sale
+
+export const createSale = async (data) => {
+  const response = await api.post("/api/sale/create", data);
+  return response.data;
+};
+
+export const getSales = async () => {
+  const response = await api.get("/api/sale/v1/sale/list");
+  return response.data;
+};

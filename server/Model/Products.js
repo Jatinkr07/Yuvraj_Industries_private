@@ -83,9 +83,10 @@ const productSchema = new mongoose.Schema(
     assignedToSubDealer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "SubDealer",
+      default: null,
     },
     isAssignedToSubDealer: { type: Boolean, default: false },
-    assignedToSubDealerAt: Date,
+    assignedToSubDealerAt: { type: Date },
   },
   {
     timestamps: true,

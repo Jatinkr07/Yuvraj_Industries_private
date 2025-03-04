@@ -8,6 +8,7 @@ import categoryRoutes from "./Routes/CategoryRoutes.js";
 import adminRoutes from "./Routes/AdminRoutes.js";
 import productRoutes from "./Routes/ProductRoutes.js";
 import dealerRoutes from "./Routes/DealerRoutes.js";
+import saleRoutes from "./Routes/SaleRoutes.js";
 
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -35,7 +36,8 @@ app.use("/uploads", express.static(join(__dirname, "uploads")));
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/dealer", dealerRoutes);
+app.use("/api/sale", saleRoutes);
 app.use("/api/admin", adminRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 6600;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -44,7 +44,7 @@ export const subDealerLogin = async (req, res) => {
     );
 
     res.cookie("subDealerToken", token, {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       maxAge: 3600000,

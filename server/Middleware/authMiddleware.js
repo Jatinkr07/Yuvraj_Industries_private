@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import SubDealer from "../Model/SubDealer.js";
 
 export const isAuthenticated = (req, res, next) => {
   if (req.cookies.adminAuth === "authenticated") {
@@ -52,9 +53,23 @@ export const authenticateSubDealer = (req, res, next) => {
     req.subDealerId = decoded.id;
     req.role = decoded.role;
 
-    SubDealer.findById(decoded.id).then((subDealer) => {
-      req.dealerId = subDealer.createdBy;
-      next();
-    });
+    SubDealer.findById(decoded.id)
+      .then((subDealer) => {
+        if (!subDealer) {
+          return res.status(404).json({ message: "Sub-dealer not found" });
+        }
+        req.dealerId = subDealer.createdBy;
+        console.log(
+          "Authenticated - SubDealer ID:",
+          req.subDealerId,
+          "Dealer ID:",
+          req.dealerId
+        );
+        next();
+      })
+      .catch((err) => {
+        console.error("Error fetching sub-dealer:", err);
+        res.status(500).json({ message: "Server error" });
+      });
   });
 };

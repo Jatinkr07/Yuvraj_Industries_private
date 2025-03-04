@@ -1,11 +1,11 @@
-// SubDealerProductsPage.jsx
 import { useState, useEffect } from "react";
-import { Col, Row, Input, Select } from "antd";
+import { Col, Row, Input, Select, message } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import ProductCard from "../Card/ProductCard";
-import Barcode from "./BarCode/Barcode";
-import API_URL from "../../../Services/api.js";
+import Bracode from "./BarCode/Barcode";
+
 import axios from "axios";
+import { API_URL } from "../../../Services/api";
 
 export default function SubDealerProductsPage() {
   const [products, setProducts] = useState([]);
@@ -20,25 +20,35 @@ export default function SubDealerProductsPage() {
     try {
       const response = await axios.get(
         `${API_URL}/api/dealer/subdealer/products`,
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
-
-      if (Array.isArray(response.data.products)) {
-        setProducts(response.data.products);
-      } else {
-        setProducts([]);
-      }
+      console.log("Fetch Products Response:", response.data);
+      setProducts(response.data.products || []);
     } catch (error) {
       console.error("Error fetching sub-dealer products:", error);
       setProducts([]);
+      message.error("Failed to fetch products");
     }
   };
 
-  const handleScanSuccess = (product) => {
-    setProducts((prev) => [product, ...prev]);
-    setIsScannerOpen(false);
+  const handleScanSuccess = async (code) => {
+    try {
+      console.log("PRODUCT -->", code);
+      const response = await axios.post(
+        `${API_URL}/api/products/subdealer/assign-product`,
+        { code },
+        { withCredentials: true }
+      );
+      console.log("Product Assigned:", response.data.product);
+      setProducts((prev) => [response.data.product, ...prev]);
+      message.success("Product assigned successfully");
+      setIsScannerOpen(false);
+    } catch (error) {
+      console.error("Error assigning product:", error.response?.data || error);
+      const errorMsg =
+        error.response?.data?.message || "Failed to assign product";
+      message.error(errorMsg);
+    }
   };
 
   const filteredProducts = Array.isArray(products)
@@ -79,11 +89,10 @@ export default function SubDealerProductsPage() {
         />
       </div>
 
-      {/* Product Grid */}
       <Row gutter={[16, 16]}>
         {filteredProducts.length > 0 ? (
           filteredProducts.map((product) => (
-            <Col xs={24} sm={12} md={12} lg={12} xl={12} key={product._id}>
+            <Col xs={24} sm={12} md={12} lg={12} xl={24} key={product._id}>
               <ProductCard
                 productName={product.productName}
                 category={product.category?.name}
@@ -108,7 +117,7 @@ export default function SubDealerProductsPage() {
         )}
       </Row>
 
-      <Barcode
+      <Bracode
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
         onScanSuccess={handleScanSuccess}

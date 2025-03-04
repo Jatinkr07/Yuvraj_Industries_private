@@ -5,8 +5,12 @@ import {
   updateProduct,
   deleteProduct,
   assignProductToDealer,
+  assignProductToSubDealer,
 } from "../Controllers/ProductController.js";
-import { isDealerAuthenticated } from "../Middleware/authMiddleware.js";
+import {
+  authenticateSubDealer,
+  isDealerAuthenticated,
+} from "../Middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -15,5 +19,10 @@ router.get("/", getProducts);
 router.put("/:id", updateProduct);
 router.delete("/:id", deleteProduct);
 router.post("/assign", isDealerAuthenticated, assignProductToDealer);
+router.post(
+  "/subdealer/assign-product",
+  authenticateSubDealer,
+  assignProductToSubDealer
+);
 
 export default router;

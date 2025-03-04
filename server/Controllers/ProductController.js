@@ -84,6 +84,8 @@ export const createProduct = async (req, res) => {
       addedOn: new Date(),
       assignedTo: null,
       isAssigned: false,
+      assignedToSubDealer: null,
+      isAssignedToSubDealer: false,
     };
 
     for (let i = 0; i < qty; i++) {
@@ -169,17 +171,29 @@ export const assignProductToSubDealer = async (req, res) => {
     const subDealerId = req.subDealerId;
     const dealerId = req.dealerId;
 
+    console.log("Assigning to SubDealer - Code:", code);
+    console.log("SubDealer ID:", subDealerId);
+    console.log("Dealer ID:", dealerId);
+
     if (!code) {
       return res
         .status(400)
         .json({ message: "No barcode or serial number provided" });
     }
 
+    // Log all products with this code for debugging
+    const allProducts = await Product.find({
+      $or: [{ barcode: code }, { serialNumber: code }],
+    });
+    console.log("All products with code:", allProducts);
+
     let product = await Product.findOne({
       $or: [{ barcode: code }, { serialNumber: code }],
       assignedTo: dealerId,
       isAssigned: true,
     });
+
+    console.log("Found Product with conditions:", product || "None");
 
     if (!product) {
       return res.status(404).json({
@@ -203,6 +217,8 @@ export const assignProductToSubDealer = async (req, res) => {
       },
       { new: true }
     ).populate("category", "name");
+
+    console.log("Assigned Product:", updatedProduct);
 
     res.status(200).json({
       message: "Product assigned to sub-dealer successfully",

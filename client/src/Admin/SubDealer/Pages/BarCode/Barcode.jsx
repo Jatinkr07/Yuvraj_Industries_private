@@ -10,8 +10,10 @@ export default function Bracode({ isOpen, onClose, onScanSuccess }) {
   const [error, setError] = useState(null);
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
+  const isMounted = useRef(false);
 
   const startScanning = async () => {
+    if (!isMounted.current) return;
     setError(null);
     try {
       console.log("[Html5Qrcode] Requesting camera access...");
@@ -105,6 +107,7 @@ export default function Bracode({ isOpen, onClose, onScanSuccess }) {
   };
 
   useEffect(() => {
+    isMounted.current = true;
     if (isOpen) {
       console.log("[Html5Qrcode] Starting scanner...");
       scannerRef.current.id = "html5-qrcode-scanner";
@@ -115,6 +118,7 @@ export default function Bracode({ isOpen, onClose, onScanSuccess }) {
 
     return () => {
       console.log("[Html5Qrcode] Cleanup triggered");
+      isMounted.current = false;
       stopScanning();
     };
   }, [isOpen]);
@@ -122,6 +126,7 @@ export default function Bracode({ isOpen, onClose, onScanSuccess }) {
   const handleManualSubmit = () => {
     if (manualSerial.trim()) {
       console.log("[Html5Qrcode] Manual entry submitted:", manualSerial.trim());
+      stopScanning();
       onScanSuccess(manualSerial.trim());
       setManualSerial("");
       onClose();
