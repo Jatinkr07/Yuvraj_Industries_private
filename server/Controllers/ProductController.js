@@ -163,6 +163,63 @@ export const assignProductToDealer = async (req, res) => {
   }
 };
 
+export const assignProductToSubDealer = async (req, res) => {
+  try {
+    const { code } = req.body;
+    const subDealerId = req.subDealerId;
+    const dealerId = req.dealerId;
+
+    if (!code) {
+      return res
+        .status(400)
+        .json({ message: "No barcode or serial number provided" });
+    }
+
+    let product = await Product.findOne({
+      $or: [{ barcode: code }, { serialNumber: code }],
+      assignedTo: dealerId,
+      isAssigned: true,
+    });
+
+    if (!product) {
+      return res.status(404).json({
+        message:
+          "Product not found or not assigned to your dealer. Ensure the barcode or serial number is correct.",
+      });
+    }
+
+    if (product.isAssignedToSubDealer) {
+      return res
+        .status(400)
+        .json({ message: "Product already assigned to a sub-dealer" });
+    }
+
+    const updatedProduct = await Product.findOneAndUpdate(
+      { _id: product._id },
+      {
+        assignedToSubDealer: subDealerId,
+        isAssignedToSubDealer: true,
+        assignedToSubDealerAt: new Date(),
+      },
+      { new: true }
+    ).populate("category", "name");
+
+    res.status(200).json({
+      message: "Product assigned to sub-dealer successfully",
+      product: updatedProduct,
+    });
+  } catch (error) {
+    console.error(
+      "[Backend] Error assigning product to sub-dealer:",
+      error.message
+    );
+    res.status(500).json({
+      message: "Failed to assign product to sub-dealer",
+      error: error.message,
+    });
+  }
+};
+
 export const getProducts = async (req, res) => {
   try {
     const { page = 1, limit = 50, search = "" } = req.query;

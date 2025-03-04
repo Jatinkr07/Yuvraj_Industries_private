@@ -1,32 +1,55 @@
+/* eslint-disable react/prop-types */
+/* eslint-disable no-unused-vars */
 import { Card } from "antd";
 
-export default function ProductCard() {
+export default function ProductCard({ product }) {
+  const {
+    productName = "SUBMERSIBLE SET",
+    stage = "15",
+    power = "1.5/2",
+    pipeSize = "32 mm",
+    warranty = "1 year",
+    serialNumber = "24517D56",
+    addedOn = new Date(),
+    quantity = "One Set",
+  } = product || {};
+
+  const formattedDate = new Date(addedOn).toLocaleDateString("en-US", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+  const monthYear = new Date(addedOn).toLocaleDateString("en-US", {
+    month: "short",
+    year: "numeric",
+  });
+
   return (
-    <Card className="max-w-9xl grid grid-cols-1 lg:grid-cols-2 mx-auto border-2 border-black">
+    <Card className="w-full max-w-md lg:max-w-full  grid grid-cols-1 lg:grid-cols-2 mx-auto border-2 border-black gap-4">
       {/* Header */}
-      <div className=" border-black border-r-2 border-t-2 border-l-2 p-3.5 text-center">
-        <h1 className="text-[13px] text-black md:text-[22px] font-bold  text-nowrap">
+      <div className="border-black border-t-2 border-l-2 border-r-2 p-3.5 text-center">
+        <h1 className="text-[13px] md:text-[22px] font-bold text-black text-nowrap">
           MFD. BY - YUVRAJ INDUSTRIES, FARIDABAD, HARYANA
         </h1>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-2 border-t-2 border-black">
-        {/* Left Column */}
-        <div className="border-r-2 border-black">
+      {/* Product Details Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-2 border-t-2 border-black text-black">
+        {/* Left Section */}
+        <div className="border-black border-r-2 lg:border-r-2">
           <div className="border-b-2 border-black border-l-2 p-3 text-center">
-            <h2 className="font-bold text-xs lg:text-[14px] text-black">
-              SUBMERSIBLE SET
+            <h2 className="font-[500] text-[10px] lg:text-[12.5px] uppercase">
+              {productName}
             </h2>
           </div>
           {[
-            { label: "STAGE", value: "15" },
-            { label: "KW/HP", value: "1.5/2" },
+            { label: "STAGE", value: stage },
+            { label: "KW/HP", value: power },
             { label: "VOLTS", value: "240V" },
           ].map((item, index) => (
             <div
               key={index}
-              className="grid grid-cols-2 border-b-2 border-black border-l-2 p-2 last:border-b-0 lg:text-lg text-black text-xs"
+              className="grid grid-cols-2 border-b-2 border-black border-l-2  p-2 last:border-b-0 lg:text-lg text-xs"
             >
               <div className="font-bold">{item.label} :</div>
               <div className="text-right">{item.value}</div>
@@ -34,21 +57,21 @@ export default function ProductCard() {
           ))}
         </div>
 
-        {/* Right Column */}
+        {/* Right Section */}
         <div>
-          <div className="border-b-2 border-black p-3 text-center border-r-2 text-black">
+          <div className="border-b-2  border-black p-3 text-center border-r-2 text-black">
             <div className="lg:text-[12px] text-[10px] text-nowrap">
               WET (OIL FILLED), BORE SIZE: 10 mm
             </div>
           </div>
           {[
-            { label: "PIPE SIZE", value: "32 mm" },
+            { label: "PIPE SIZE", value: pipeSize },
             { label: "PHASE", value: "1 ph" },
-            { label: "QUANTITY", value: "One Set" },
+            { label: "QUANTITY", value: quantity },
           ].map((item, index) => (
             <div
               key={index}
-              className="grid grid-cols-2 border-b-2 border-black p-2 border-r-2 last:border-b-0 lg:text-lg text-xs text-black"
+              className="grid grid-cols-2 border-b-2 border-black p-2 border-r-2 last:border-b-0 lg:text-lg text-xs"
             >
               <div className="font-bold">{item.label} :</div>
               <div className="text-right">{item.value}</div>
@@ -57,19 +80,19 @@ export default function ProductCard() {
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="grid grid-cols-2 border-t-2 border-black border-l-2 border-b-2 border-r-2">
-        <div className="p-4 border-r-2 border-black text-black">
+      {/* Footer Section */}
+      <div className="grid grid-cols-2 lg:grid-cols-2 border-t-2 border-black border-l-2 border-b-2 border-r-2 text-black">
+        <div className="p-4 border-r-2 border-black">
           <div className="font-bold lg:text-lg text-[13px]">
-            S.R. NO. - 24517D56
+            S.R. NO. - {serialNumber}
           </div>
           <div className="lg:text-lg text-xs">
-            Month / Year of MFG. : DEC/2024
+            Month / Year of MFG. : {monthYear.toUpperCase()}
           </div>
         </div>
-        <div className="p-4 flex lg:justify-end items-center space-x-4 text-black">
+        <div className="p-4 flex lg:justify-end items-center space-x-4">
           <div className="font-bold lg:text-lg text-sm">Date :</div>
-          <span className="lg:text-lg text-sm">29/12/2024</span>
+          <span className="lg:text-lg text-sm">{formattedDate}</span>
         </div>
       </div>
     </Card>

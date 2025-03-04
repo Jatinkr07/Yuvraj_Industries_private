@@ -36,7 +36,7 @@ export default function ProductCard({ product }) {
       {/* Product Details Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-2 border-t-2 border-black text-black">
         {/* Left Section */}
-        <div className="border-black lg:border-r-2">
+        <div className="border-black border-r-2 lg:border-r-2">
           <div className="border-b-2 border-black border-l-2 p-3 text-center">
             <h2 className="font-[500] text-[10px] lg:text-[12.5px] uppercase">
               {productName}
@@ -49,7 +49,7 @@ export default function ProductCard({ product }) {
           ].map((item, index) => (
             <div
               key={index}
-              className="grid grid-cols-2 border-b-2 border-black border-l-2 p-2 last:border-b-0 lg:text-lg text-xs"
+              className="grid grid-cols-2 border-b-2 border-black border-l-2  p-2 last:border-b-0 lg:text-lg text-xs"
             >
               <div className="font-bold">{item.label} :</div>
               <div className="text-right">{item.value}</div>
@@ -59,7 +59,7 @@ export default function ProductCard({ product }) {
 
         {/* Right Section */}
         <div>
-          <div className="border-b-2 border-black p-3 text-center border-r-2 text-black">
+          <div className="border-b-2  border-black p-3 text-center border-r-2 text-black">
             <div className="lg:text-[12px] text-[10px] text-nowrap">
               WET (OIL FILLED), BORE SIZE: 10 mm
             </div>
@@ -81,7 +81,7 @@ export default function ProductCard({ product }) {
       </div>
 
       {/* Footer Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 border-t-2 border-black border-l-2 border-b-2 border-r-2 text-black">
+      <div className="grid grid-cols-2 lg:grid-cols-2 border-t-2 border-black border-l-2 border-b-2 border-r-2 text-black">
         <div className="p-4 border-r-2 border-black">
           <div className="font-bold lg:text-lg text-[13px]">
             S.R. NO. - {serialNumber}

@@ -1,89 +1,118 @@
-import { Col, Input, Row, Select } from "antd";
-import { SearchOutlined, PlusOutlined } from "@ant-design/icons";
+// SubDealerProductsPage.jsx
+import { useState, useEffect } from "react";
+import { Col, Row, Input, Select } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
 import ProductCard from "../Card/ProductCard";
-import { Link } from "react-router-dom";
+import Barcode from "./BarCode/Barcode";
+import API_URL from "../../../Services/api.js";
+import axios from "axios";
 
-export default function ProductsPage() {
-  // const productData = [
-  //   {
-  //     stage: "15",
-  //     hp: "1.5/2",
-  //     volts: "240V",
-  //     pipeSize: "32 mm",
-  //     phase: "1 ph",
-  //     quantity: "One Set",
-  //     srNo: "24507056",
-  //     date: "29/12/2024",
-  //   },
-  //   // Add more product items as needed
-  // ];
+export default function SubDealerProductsPage() {
+  const [products, setProducts] = useState([]);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/dealer/subdealer/products`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (Array.isArray(response.data.products)) {
+        setProducts(response.data.products);
+      } else {
+        setProducts([]);
+      }
+    } catch (error) {
+      console.error("Error fetching sub-dealer products:", error);
+      setProducts([]);
+    }
+  };
+
+  const handleScanSuccess = (product) => {
+    setProducts((prev) => [product, ...prev]);
+    setIsScannerOpen(false);
+  };
+
+  const filteredProducts = Array.isArray(products)
+    ? products.filter(
+        (product) =>
+          product.productName?.toLowerCase().includes(search.toLowerCase()) ||
+          product.serialNumber?.toLowerCase().includes(search.toLowerCase()) ||
+          product.barcode?.toLowerCase().includes(search.toLowerCase())
+      )
+    : [];
 
   return (
     <div className="p-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        {/* Right Side: Category Filter & Search */}
-        <div className="flex flex-wrap items-center  gap-24">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="flex flex-wrap items-center gap-4">
           <Select
             placeholder="Category"
             style={{ width: 200, height: 40 }}
             options={[
+              { value: "all", label: "All Categories" },
               { value: "category1", label: "Category 1" },
               { value: "category2", label: "Category 2" },
             ]}
           />
-          <Link to="/sale/barcode">
-            <button
-              className="px-3 py-2 bg-[#7CB9E8] text-white hover:bg-white hover:text-[#7CB9E8] border border-[#7CB9E8] font-[500] rounded-md"
-              icon={<PlusOutlined />}
-            >
-              Add New
-            </button>
-          </Link>
-        </div>{" "}
+          <button
+            className="px-3 py-2 bg-[#7CB9E8] text-white hover:bg-white hover:text-[#7CB9E8] border border-[#7CB9E8] font-[500] rounded-md"
+            onClick={() => setIsScannerOpen(true)}
+          >
+            Assign Product
+          </button>
+        </div>
         <Input
-          placeholder="Search"
+          placeholder="Search by name, serial, or barcode"
           prefix={<SearchOutlined />}
-          style={{ width: 500, padding: "12px", borderRadius: "20px" }}
+          style={{ width: 300, padding: "8px", borderRadius: "20px" }}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
-      {/* Product List */}
-      {/* <Row gutter={[16, 16]} className="mt-4">
-        {productData.map((product, index) => (
-          <Col xs={24} sm={24} md={12} lg={8} xl={24} key={index}>
-            <Card className="mb-4">
-              <div className="text-center border-b pb-2 mb-2 font-bold">
-                MFD. BY - YUVRAJ INDUSTRIES, FARIDABAD, HARYANA
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>SUBMERSIBLE SET</div>
-                <div></div>
-                <div>STAGE:</div>
-                <div>{product.stage}</div>
-                <div>KW/HP:</div>
-                <div>{product.hp}</div>
-                <div>VOLTS:</div>
-                <div>{product.volts}</div>
-                <div>PIPE SIZE:</div>
-                <div>{product.pipeSize}</div>
-                <div>PHASE:</div>
-                <div>{product.phase}</div>
-                <div>QUANTITY:</div>
-                <div>{product.quantity}</div>
-                <div>S.R. NO. -</div>
-                <div>{product.srNo}</div>
-                <div>Date:</div>
-                <div>{product.date}</div>
-              </div>
-            </Card>
+      {/* Product Grid */}
+      <Row gutter={[16, 16]}>
+        {filteredProducts.length > 0 ? (
+          filteredProducts.map((product) => (
+            <Col xs={24} sm={12} md={12} lg={12} xl={12} key={product._id}>
+              <ProductCard
+                productName={product.productName}
+                category={product.category?.name}
+                power={product.power}
+                stage={product.stage}
+                maxDischarge={product.maxDischarge}
+                maxHead={product.maxHead}
+                warranty={product.warranty}
+                pipeSize={product.pipeSize}
+                description={product.description}
+                serialNumber={product.serialNumber}
+                barcode={product.barcode}
+                quantity={product.quantity}
+                assignedToSubDealerAt={product.assignedToSubDealerAt}
+              />
+            </Col>
+          ))
+        ) : (
+          <Col span={24} className="text-center py-12">
+            <p className="text-lg text-gray-500">No products assigned yet.</p>
           </Col>
-        ))}
-      </Row> */}
-      <Row gutter={[16, 16]} className="py-12">
-        <Col xs={24} sm={24} md={24} lg={8} xl={24}>
-          <ProductCard />
-        </Col>
+        )}
       </Row>
+
+      <Barcode
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScanSuccess={handleScanSuccess}
+      />
     </div>
   );
 }

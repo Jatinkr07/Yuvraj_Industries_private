@@ -1,106 +1,173 @@
-/* eslint-disable react/no-unescaped-entities */
-import { useState } from "react";
-import { Button, Modal, Input, message } from "antd";
-import Scanner from "react-qr-barcode-scanner";
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react/prop-types */
+import { useState, useEffect, useRef } from "react";
+import { Modal, Input, Button, message } from "antd";
+import { QrcodeOutlined } from "@ant-design/icons";
+import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
 
-export default function QRScanner() {
-  const [data, setData] = useState(null);
-  const [serialNumber, setSerialNumber] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+export default function Bracode({ isOpen, onClose, onScanSuccess }) {
+  const [manualSerial, setManualSerial] = useState("");
+  const [error, setError] = useState(null);
+  const scannerRef = useRef(null);
+  const html5QrCodeRef = useRef(null);
 
-  const handleError = (error) => {
-    console.error("Scan Error:", error);
-    message.error("Failed to scan. Please try again.");
-  };
+  const startScanning = async () => {
+    setError(null);
+    try {
+      console.log("[Html5Qrcode] Requesting camera access...");
+      const devices = await Html5Qrcode.getCameras();
+      if (!devices || devices.length === 0) {
+        throw new Error("No cameras found on this device.");
+      }
 
-  const handleScan = (result) => {
-    if (result?.text) {
-      setData(result.text);
-      console.log("Scanned Data:", result.text);
-      message.success(`Scanned: ${result.text}`);
+      const cameraId =
+        devices.find((device) => device.facingMode === "environment")?.id ||
+        devices[0].id;
+
+      html5QrCodeRef.current = new Html5Qrcode(scannerRef.current.id);
+
+      const config = {
+        fps: 20,
+        qrbox: { width: 350, height: 200 },
+        aspectRatio: 1.75,
+        formatsToSupport: ["CODE_128"],
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true,
+        },
+        disableFlip: false,
+      };
+
+      await html5QrCodeRef.current.start(
+        cameraId,
+        config,
+        (decodedText, decodedResult) => {
+          console.log("[Html5Qrcode] Detected barcode:", {
+            decodedText,
+            confidence: decodedResult?.confidence || "N/A",
+            format: decodedResult?.format || "N/A",
+            rawBytes: decodedResult?.rawBytes || "N/A",
+          });
+
+          const isValidFormat =
+            /^PRD-\d+-\d{4}$/.test(decodedText) && decodedText.length > 10;
+          if (isValidFormat) {
+            console.log(
+              "[Html5Qrcode] Valid barcode detected, proceeding with assignment"
+            );
+            stopScanning();
+            onScanSuccess(decodedText);
+            onClose();
+          } else {
+            setError(
+              "Invalid barcode format. Expected: PRD-<timestamp>-<random>"
+            );
+            console.warn("[Html5Qrcode] Invalid format detected:", decodedText);
+          }
+        },
+        (errorMessage) => {
+          console.log("[Html5Qrcode] Scan error:", {
+            message: errorMessage,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      );
+      console.log(
+        "[Html5Qrcode] Scanner started successfully with config:",
+        config
+      );
+    } catch (err) {
+      console.error("[Html5Qrcode] Error starting scanner:", {
+        message: err.message,
+        stack: err.stack,
+      });
+      setError(
+        `Camera error: ${err.message || "Permission denied or no camera"}`
+      );
+      stopScanning();
     }
   };
 
-  const handleSerialSubmit = () => {
-    console.log("Serial Number submitted:", serialNumber);
-    setIsModalOpen(false);
+  const stopScanning = () => {
+    if (
+      html5QrCodeRef.current &&
+      html5QrCodeRef.current.getState() === Html5QrcodeScannerState.SCANNING
+    ) {
+      html5QrCodeRef.current
+        .stop()
+        .then(() => {
+          console.log("[Html5Qrcode] Scanner stopped");
+          html5QrCodeRef.current = null;
+        })
+        .catch((err) =>
+          console.error("[Html5Qrcode] Error stopping scanner:", err)
+        );
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      console.log("[Html5Qrcode] Starting scanner...");
+      scannerRef.current.id = "html5-qrcode-scanner";
+      startScanning();
+    } else {
+      stopScanning();
+    }
+
+    return () => {
+      console.log("[Html5Qrcode] Cleanup triggered");
+      stopScanning();
+    };
+  }, [isOpen]);
+
+  const handleManualSubmit = () => {
+    if (manualSerial.trim()) {
+      console.log("[Html5Qrcode] Manual entry submitted:", manualSerial.trim());
+      onScanSuccess(manualSerial.trim());
+      setManualSerial("");
+      onClose();
+    } else {
+      message.error("Please enter a valid code (e.g., PRD-1740558574201-4971)");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <div className="relative max-w-md mx-auto mt-8 aspect-square">
-        <div className="absolute inset-0 mt-12">
-          <Scanner
-            onError={handleError}
-            onScan={handleScan}
-            constraints={{
-              video: {
-                facingMode: { ideal: "environment" },
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-              },
-            }}
-            className="w-full h-full"
+    <Modal
+      title="Scan Barcode"
+      open={isOpen}
+      onCancel={() => {
+        stopScanning();
+        setManualSerial("");
+        setError(null);
+        onClose();
+      }}
+      footer={null}
+      centered
+      width={600}
+    >
+      <div
+        ref={scannerRef}
+        className="relative w-full h-64"
+        style={{ overflow: "hidden", backgroundColor: "black" }}
+      />
+      {error && <div className="mt-4 text-center text-red-600">{error}</div>}
+      <div className="mt-4 text-center">
+        <div className="flex items-center justify-center gap-2">
+          <Input
+            value={manualSerial}
+            onChange={(e) => setManualSerial(e.target.value)}
+            placeholder="Enter code manually (e.g., PRD-1740558574201-4971)"
+            prefix={<QrcodeOutlined />}
+            onPressEnter={handleManualSubmit}
           />
-        </div>
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-0 w-16 h-16 border-l-4 border-t-4 border-blue-500" />
-          <div className="absolute top-0 right-0 w-16 h-16 border-r-4 border-t-4 border-blue-500" />
-          <div className="absolute bottom-0 left-0 w-16 h-16 border-l-4 border-b-4 border-blue-500" />
-          <div className="absolute bottom-0 right-0 w-16 h-16 border-r-4 border-b-4 border-blue-500" />
-        </div>
-      </div>
-
-      {data && (
-        <div className="mt-4 p-4 bg-blue-600 mx-4 rounded-lg text-center">
-          <p>Scanned Code: {data}</p>
-        </div>
-      )}
-
-      {/* Manual Serial Number Entry */}
-      <div className="fixed bottom-0 left-0 right-0 mx-auto max-w-md w-full">
-        <div className="bg-white p-4 text-center">
-          <p className="text-gray-700 mb-2">Didn't find QR code?</p>
-          <p className="text-black">
-            Please enter the
-            <span
-              className="text-black font-bold cursor-pointer underline ml-1"
-              onClick={() => setIsModalOpen(true)}
-            >
-              Serial Number Manually
-            </span>
-          </p>
+          <Button
+            type="primary"
+            onClick={handleManualSubmit}
+            disabled={!manualSerial.trim()}
+          >
+            Submit
+          </Button>
         </div>
       </div>
-
-      {/* Modal for Manual Serial Number Entry */}
-      <div className="">
-        <Modal
-          title="Enter Serial Number Manually Here"
-          open={isModalOpen}
-          onCancel={() => setIsModalOpen(false)}
-          footer={null}
-          centered
-          className="bg-gray-800   text-white "
-        >
-          <div className="space-y-4 ">
-            <Input
-              id="serial"
-              value={serialNumber}
-              onChange={(e) => setSerialNumber(e.target.value)}
-              className="bg-gray-700 border-gray-600  text-white"
-              placeholder="Enter serial number"
-            />
-            <Button
-              type="primary"
-              className="w-full bg-blue-600"
-              onClick={handleSerialSubmit}
-            >
-              Submit
-            </Button>
-          </div>
-        </Modal>
-      </div>
-    </div>
+    </Modal>
   );
 }

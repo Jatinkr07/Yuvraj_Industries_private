@@ -16,7 +16,7 @@ export default function Dashboard() {
       icon: <FileTextOutlined style={{ fontSize: 24, color: "#16a34a" }} />,
       label: "Sales",
       description: "Sales records",
-      href: "/subdealer/sales",
+      href: "/csubdealer/sales",
     },
   ];
 

@@ -9,6 +9,7 @@ import {
   getDealerProducts,
 } from "../Controllers/DealerController.js";
 import {
+  authenticateSubDealer,
   isAuthenticated,
   isDealerAuthenticated,
 } from "../Middleware/authMiddleware.js";
@@ -19,6 +20,7 @@ import {
   getSubDealers,
   updateSubDealer,
   deleteSubDealer,
+  getSubDealerProducts,
 } from "../Controllers/SubDealerController.js";
 
 const router = express.Router();
@@ -41,5 +43,6 @@ router.delete(
   isDealerAuthenticated,
   deleteSubDealer
 );
+router.get("/subdealer/products", authenticateSubDealer, getSubDealerProducts);
 
 export default router;

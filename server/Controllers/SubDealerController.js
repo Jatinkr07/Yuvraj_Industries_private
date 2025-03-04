@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import SubDealer from "../Model/SubDealer.js";
+import Product from "../Model/Products.js";
 
 export const createSubDealer = async (req, res) => {
   try {
@@ -109,5 +110,24 @@ export const deleteSubDealer = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error deleting sub-dealer", error: error.message });
+  }
+};
+
+export const getSubDealerProducts = async (req, res) => {
+  try {
+    const subDealerId = req.subDealerId;
+    const products = await Product.find({
+      assignedToSubDealer: subDealerId,
+      isAssignedToSubDealer: true,
+    })
+      .populate("category", "name")
+      .sort({ assignedToSubDealerAt: -1 });
+
+    res.status(200).json({ products });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching sub-dealer products",
+      error: error.message,
+    });
   }
 };
