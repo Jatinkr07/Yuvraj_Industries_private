@@ -57,7 +57,7 @@ const handleFileUpload = (req) => {
 export const createProduct = async (req, res) => {
   try {
     const { fields, files } = await handleFileUpload(req);
-    const { serialNumber } = fields;
+    const { serialNumber, warranty, warrantyUnit } = fields;
 
     const existingProduct = await Product.findOne({ serialNumber });
     if (existingProduct) {
@@ -70,6 +70,11 @@ export const createProduct = async (req, res) => {
     const qty = parseInt(fields.quantity) || 1;
     const products = [];
 
+    const warrantyDays = calculateWarrantyDays(
+      parseInt(warranty),
+      warrantyUnit
+    );
+
     const baseProduct = {
       productName: fields.productName,
       category: fields.category,
@@ -78,6 +83,7 @@ export const createProduct = async (req, res) => {
       maxDischarge: fields.maxDischarge,
       maxHead: fields.maxHead,
       warranty: fields.warranty,
+      warrantyUnit,
       pipeSize: fields.pipeSize,
       description: fields.description,
       images,
@@ -109,6 +115,25 @@ export const createProduct = async (req, res) => {
       .json({ message: "Failed to create products", error: error.message });
   }
 };
+
+//function foe warranty calc
+function calculateWarrantyDays(warranty, unit) {
+  console.log("Calculating warranty days - Warranty:", warranty, "Unit:", unit);
+  const parsedWarranty = parseInt(warranty, 10);
+  if (isNaN(parsedWarranty)) {
+    throw new Error("Warranty value is not a valid number");
+  }
+  switch (unit) {
+    case "days":
+      return parsedWarranty;
+    case "months":
+      return parsedWarranty * 30;
+    case "years":
+      return parsedWarranty * 365;
+    default:
+      throw new Error(`Invalid warranty unit: ${unit}`);
+  }
+}
 
 export const assignProductToDealer = async (req, res) => {
   try {

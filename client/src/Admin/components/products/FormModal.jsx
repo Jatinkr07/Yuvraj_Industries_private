@@ -1,3 +1,4 @@
+// FormModal.jsx
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import { Modal, Form, Input, Select, Upload, Button, message } from "antd";
@@ -21,31 +22,26 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
       form.setFieldsValue({
         ...initialValues,
         category: initialValues.category?._id || initialValues.category,
-        productName: initialValues.productName,
-        power: initialValues.power,
-        stage: initialValues.stage,
-        maxDischarge: initialValues.maxDischarge,
-        maxHead: initialValues.maxHead,
-        warranty: initialValues.warranty,
-        pipeSize: initialValues.pipeSize,
-        description: initialValues.description,
-        serialNumber: initialValues.serialNumber,
-        quantity: initialValues.quantity,
+        warranty: initialValues.warranty
+          ? Math.floor(
+              initialValues.warranty /
+                (initialValues.warrantyUnit === "years"
+                  ? 365
+                  : initialValues.warrantyUnit === "months"
+                  ? 30
+                  : 1)
+            )
+          : "",
+        warrantyUnit: initialValues.warrantyUnit || "days",
       });
 
       if (initialValues.images && initialValues.images.length > 0) {
-        const existingImages = initialValues.images.map((image, index) => {
-          const imageUrl = image.startsWith("http")
-            ? image
-            : `${API_URL}/${image}`;
-
-          return {
-            uid: `-${index + 1}`,
-            name: image.split("/").pop() || `image-${index + 1}.png`,
-            status: "done",
-            url: imageUrl,
-          };
-        });
+        const existingImages = initialValues.images.map((image, index) => ({
+          uid: `-${index + 1}`,
+          name: image.split("/").pop() || `image-${index + 1}.png`,
+          status: "done",
+          url: image.startsWith("http") ? image : `${API_URL}/${image}`,
+        }));
         setFileList(existingImages);
       } else {
         setFileList([]);
@@ -196,16 +192,30 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
             />
           </Form.Item>
 
-          <Form.Item
-            label="Warranty Period"
-            name="warranty"
-            rules={[{ required: true, message: "Warranty period is required" }]}
-          >
-            <Input
-              placeholder="Enter warranty period"
-              className="h-12 bg-gray-100"
-            />
-          </Form.Item>
+          <div className="grid grid-cols-2 gap-2">
+            <Form.Item
+              label="Warranty"
+              name="warranty"
+              rules={[{ required: true, message: "Warranty is required" }]}
+            >
+              <Input
+                type="number"
+                placeholder="Enter warranty"
+                className="h-12 bg-gray-100"
+              />
+            </Form.Item>
+            <Form.Item
+              label="Warranty Unit"
+              name="warrantyUnit"
+              rules={[{ required: true, message: "Warranty unit is required" }]}
+            >
+              <Select placeholder="Unit" className="h-12 bg-gray-100">
+                <Select.Option value="days">Days</Select.Option>
+                <Select.Option value="months">Months</Select.Option>
+                <Select.Option value="years">Years</Select.Option>
+              </Select>
+            </Form.Item>
+          </div>
 
           <Form.Item
             label="Pipe Size"

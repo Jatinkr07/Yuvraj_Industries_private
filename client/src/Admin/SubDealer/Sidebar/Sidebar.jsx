@@ -80,10 +80,8 @@ export default function Sidebar({ collapsed, isMobile, onClose, siderWidth }) {
 
   const handleMenuClick = (e) => {
     if (e.key === "/logout") {
-      // Remove subdealer cookies
       Cookies.remove("subDealerToken");
       Cookies.remove("subdealerAuth");
-      // Redirect to login page
       navigate("/subdealer/login");
     } else {
       navigate(e.key);
@@ -109,7 +107,7 @@ export default function Sidebar({ collapsed, isMobile, onClose, siderWidth }) {
           marginBottom: 32,
           width: "90%",
           objectFit: "contain",
-          transform: "scale(1.6)",
+          transform: "scale(1.35)",
         }}
       />
       <Menu

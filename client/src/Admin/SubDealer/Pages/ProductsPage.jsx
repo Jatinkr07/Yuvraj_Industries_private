@@ -1,9 +1,9 @@
+// SubDealerProductsPage.jsx
 import { useState, useEffect } from "react";
 import { Col, Row, Input, Select, message } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import ProductCard from "../Card/ProductCard";
 import Bracode from "./BarCode/Barcode";
-
 import axios from "axios";
 import { API_URL } from "../../../Services/api";
 
@@ -20,7 +20,9 @@ export default function SubDealerProductsPage() {
     try {
       const response = await axios.get(
         `${API_URL}/api/dealer/subdealer/products`,
-        { withCredentials: true }
+        {
+          withCredentials: true,
+        }
       );
       console.log("Fetch Products Response:", response.data);
       setProducts(response.data.products || []);
@@ -33,7 +35,7 @@ export default function SubDealerProductsPage() {
 
   const handleScanSuccess = async (code) => {
     try {
-      console.log("PRODUCT -->", code);
+      console.log("Assigning product with code:", code);
       const response = await axios.post(
         `${API_URL}/api/products/subdealer/assign-product`,
         { code },
@@ -45,9 +47,9 @@ export default function SubDealerProductsPage() {
       setIsScannerOpen(false);
     } catch (error) {
       console.error("Error assigning product:", error.response?.data || error);
-      const errorMsg =
-        error.response?.data?.message || "Failed to assign product";
-      message.error(errorMsg);
+      message.error(
+        error.response?.data?.message || "Failed to assign product"
+      );
     }
   };
 
@@ -92,21 +94,21 @@ export default function SubDealerProductsPage() {
       <Row gutter={[16, 16]}>
         {filteredProducts.length > 0 ? (
           filteredProducts.map((product) => (
-            <Col xs={24} sm={12} md={12} lg={12} xl={24} key={product._id}>
+            <Col xs={24} sm={12} md={12} lg={12} key={product._id}>
               <ProductCard
-                productName={product.productName}
-                category={product.category?.name}
-                power={product.power}
-                stage={product.stage}
-                maxDischarge={product.maxDischarge}
-                maxHead={product.maxHead}
-                warranty={product.warranty}
-                pipeSize={product.pipeSize}
-                description={product.description}
-                serialNumber={product.serialNumber}
-                barcode={product.barcode}
-                quantity={product.quantity}
-                assignedToSubDealerAt={product.assignedToSubDealerAt}
+                product={{
+                  productName: product.productName,
+                  stage: product.stage,
+                  power: product.power,
+                  pipeSize: product.pipeSize,
+                  warranty: product.warranty,
+                  warrantyUnit: product.warrantyUnit,
+                  warrantyStartDate: product.warrantyStartDate,
+                  warrantyEndDate: product.warrantyEndDate,
+                  serialNumber: product.serialNumber,
+                  addedOn: product.assignedToSubDealerAt,
+                  quantity: product.quantity,
+                }}
               />
             </Col>
           ))

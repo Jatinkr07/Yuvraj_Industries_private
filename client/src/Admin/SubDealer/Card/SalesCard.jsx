@@ -8,12 +8,14 @@ export default function SalesCard({
   date,
   warrantyPeriod,
   warrantyEndDate,
+  warranty,
+  warrantyUnit,
   onReplace,
 }) {
   const isWarrantyExpired = new Date(warrantyEndDate) < new Date();
 
   return (
-    <div className="max-w-9xl mx-auto p-4 grid lg:grid-cols-2">
+    <div className="max-w-9xl mx-auto p-4 grid lg:grid-cols-1">
       <div className="border-2 border-black rounded-sm">
         <div className="border-b border-gray-300 p-4">
           <h1 className="text-[13px] text-nowrap md:text-xl font-bold text-center">

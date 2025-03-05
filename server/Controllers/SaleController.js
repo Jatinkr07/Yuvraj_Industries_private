@@ -1,7 +1,6 @@
-// Controller/SaleController.js
 import Product from "../Model/Products.js";
-import Replacement from "../Model/Replacement.js";
 import Sale from "../Model/SaleModel.js";
+import Replacement from "../Model/Replacement.js";
 
 export const createSale = async (req, res) => {
   try {
@@ -23,39 +22,60 @@ export const createSale = async (req, res) => {
       isAssignedToSubDealer: true,
     });
 
-    console.log("Found Product for Sale:", product || "None");
-
     if (!product) {
       return res.status(404).json({
-        message:
-          "Product not found or not assigned to you. Ensure the barcode or serial number is correct.",
+        message: "Product not found or not assigned to you.",
       });
     }
+
+    console.log(
+      "Product Warranty:",
+      product.warranty,
+      "Unit:",
+      product.warrantyUnit
+    );
+
+    const warrantyDays = calculateWarrantyDays(
+      product.warranty,
+      product.warrantyUnit
+    );
+    const warrantyStartDate = new Date();
+    const warrantyEndDate = new Date(warrantyStartDate);
+    warrantyEndDate.setDate(warrantyEndDate.getDate() + warrantyDays);
+
+    const warrantyPeriod = `${product.warranty} ${product.warrantyUnit}`;
+
+    console.log("Calculated Warranty Days:", warrantyDays);
+    console.log("Warranty Start Date:", warrantyStartDate);
+    console.log("Warranty End Date:", warrantyEndDate);
 
     const sale = new Sale({
       productId: product._id,
       subDealerId,
-      warrantyPeriod: product.warranty,
+      warrantyStartDate,
+      warrantyEndDate,
+      warrantyPeriod,
     });
     await sale.save();
 
-    const updatedProduct = await Product.findOneAndUpdate(
-      { _id: product._id },
-      {
-        assignedToSubDealer: null,
-        isAssignedToSubDealer: false,
-        assignedToSubDealerAt: null,
-      },
-      { new: true }
+    const savedSale = await Sale.findById(sale._id);
+    console.log(
+      "Saved Warranty End Date:",
+      savedSale.warrantyEndDate.toISOString()
     );
 
-    console.log("Sale Created:", sale);
-    console.log("Product Updated:", updatedProduct);
+    await Product.findByIdAndUpdate(product._id, {
+      assignedToSubDealer: null,
+      isAssignedToSubDealer: false,
+      assignedToSubDealerAt: null,
+      warrantyStartDate,
+      warrantyEndDate,
+    });
 
+    console.log("Sale Created:", sale);
     res.status(201).json({
       message: "Sale created successfully",
       sale,
-      product: updatedProduct,
     });
   } catch (error) {
     console.error("[Backend] Error creating sale:", error.message);
@@ -70,7 +90,10 @@ export const getSales = async (req, res) => {
   try {
     const subDealerId = req.subDealerId;
     const sales = await Sale.find({ subDealerId })
-      .populate("productId", "productName barcode serialNumber warranty")
+      .populate(
+        "productId",
+        "productName barcode serialNumber warranty warrantyUnit"
+      )
       .sort({ createdAt: -1 });
 
     res.status(200).json({ sales });
@@ -97,7 +120,6 @@ export const replaceProduct = async (req, res) => {
       });
     }
 
-    // Find the sale
     const sale = await Sale.findById(saleId).populate("productId");
     if (!sale || sale.subDealerId.toString() !== subDealerId) {
       return res
@@ -105,13 +127,11 @@ export const replaceProduct = async (req, res) => {
         .json({ message: "Sale not found or unauthorized" });
     }
 
-    // Check warranty expiration
     const now = new Date();
     if (new Date(sale.warrantyEndDate) < now) {
       return res.status(400).json({ message: "Warranty has expired" });
     }
 
-    // Find the new product
     let newProduct = await Product.findOne({
       $or: [{ barcode: code }, { serialNumber: code }],
       $or: [
@@ -128,8 +148,7 @@ export const replaceProduct = async (req, res) => {
 
     if (!newProduct) {
       return res.status(404).json({
-        message:
-          "Replacement product not found or already assigned to a sub-dealer",
+        message: "Replacement product not found or already assigned",
       });
     }
 
@@ -139,7 +158,6 @@ export const replaceProduct = async (req, res) => {
       });
     }
 
-    // Create replacement record
     const replacement = new Replacement({
       originalProductId: sale.productId._id,
       newProductId: newProduct._id,
@@ -149,26 +167,27 @@ export const replaceProduct = async (req, res) => {
     });
     await replacement.save();
 
-    // Update products
-    await Product.findByIdAndUpdate(sale.productId._id, {
-      assignedToSubDealer: null,
-      isAssignedToSubDealer: false,
-      assignedToSubDealerAt: null,
-    });
-
     await Product.findByIdAndUpdate(newProduct._id, {
       assignedToSubDealer: subDealerId,
       isAssignedToSubDealer: true,
       assignedToSubDealerAt: new Date(),
+      warrantyStartDate: sale.warrantyStartDate,
+      warrantyEndDate: sale.warrantyEndDate,
     });
 
-    // Remove the sale
+    await Product.findByIdAndUpdate(sale.productId._id, {
+      assignedToSubDealer: null,
+      isAssignedToSubDealer: false,
+      assignedToSubDealerAt: null,
+      warrantyStartDate: null,
+      warrantyEndDate: null,
+    });
+
     await Sale.findByIdAndDelete(saleId);
 
     console.log("Replacement Created:", replacement);
-
     res.status(200).json({
-      message: "Product replaced successfully",
+      message: "Product replaced and reassigned to sub-dealer",
       replacement,
     });
   } catch (error) {
@@ -197,3 +216,21 @@ export const getReplacements = async (req, res) => {
     });
   }
 };
+
+function calculateWarrantyDays(warranty, unit) {
+  console.log("Calculating warranty days - Warranty:", warranty, "Unit:", unit);
+  const parsedWarranty = parseInt(warranty, 10);
+  if (isNaN(parsedWarranty)) {
+    throw new Error("Warranty value is not a valid number");
+  }
+  switch (unit) {
+    case "days":
+      return parsedWarranty;
+    case "months":
+      return parsedWarranty * 30;
+    case "years":
+      return parsedWarranty * 365;
+    default:
+      throw new Error(`Invalid warranty unit: ${unit}`);
+  }
+}

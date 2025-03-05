@@ -48,6 +48,13 @@ const productSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    warrantyUnit: {
+      type: String,
+      enum: ["days", "months", "years"],
+      required: true,
+    },
+    warrantyStartDate: { type: Date },
+    warrantyEndDate: { type: Date },
     pipeSize: {
       type: String,
       required: true,

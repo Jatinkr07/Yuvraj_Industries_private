@@ -1,4 +1,3 @@
-// ReplacedPage.jsx
 import { useState, useEffect } from "react";
 import { Col, Input, Row, message } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
@@ -41,14 +40,14 @@ export default function ReplacedPage() {
   );
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div className="p-4">
       <Input
         placeholder="Search by name, original serial, or new serial"
         prefix={<SearchOutlined />}
         style={{
           marginBottom: "16px",
           padding: "8px",
-          width: "20%",
+          width: "100%",
           borderRadius: "100px",
         }}
         value={search}
@@ -58,7 +57,7 @@ export default function ReplacedPage() {
       <Row gutter={[16, 16]}>
         {filteredReplacements.length > 0 ? (
           filteredReplacements.map((replacement) => (
-            <Col xs={24} sm={24} md={24} lg={8} xl={24} key={replacement._id}>
+            <Col xs={24} sm={12} md={12} lg={12} key={replacement._id}>
               <ReplacedCard
                 type={
                   replacement.originalProductId?.productName ||
