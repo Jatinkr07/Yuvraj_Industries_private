@@ -25,7 +25,7 @@ export default function ProductCard({ product }) {
   });
 
   return (
-    <Card className="w-full max-w-md lg:max-w-full  grid grid-cols-1 lg:grid-cols-2 mx-auto border-2 border-black gap-4">
+    <Card className="w-full max-w-md lg:max-w-full  grid grid-cols-1 lg:grid-cols-1 mx-auto border-2 border-black gap-4">
       {/* Header */}
       <div className="border-black border-t-2 border-l-2 border-r-2 p-3.5 text-center">
         <h1 className="text-[13px] md:text-[22px] font-bold text-black text-nowrap">

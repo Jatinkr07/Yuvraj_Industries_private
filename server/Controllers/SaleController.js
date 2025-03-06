@@ -1,13 +1,15 @@
+// Controller/SaleController.js
 import Product from "../Model/Products.js";
 import Sale from "../Model/SaleModel.js";
 import Replacement from "../Model/Replacement.js";
 
+// Sub-Dealer Sale (Existing)
 export const createSale = async (req, res) => {
   try {
     const { code } = req.body;
     const subDealerId = req.subDealerId;
 
-    console.log("Creating Sale - Code:", code);
+    console.log("Creating Sub-Dealer Sale - Code:", code);
     console.log("SubDealer ID:", subDealerId);
 
     if (!code) {
@@ -23,9 +25,9 @@ export const createSale = async (req, res) => {
     });
 
     if (!product) {
-      return res.status(404).json({
-        message: "Product not found or not assigned to you.",
-      });
+      return res
+        .status(404)
+        .json({ message: "Product not found or not assigned to you." });
     }
 
     console.log(
@@ -35,19 +37,13 @@ export const createSale = async (req, res) => {
       product.warrantyUnit
     );
 
-    const warrantyDays = calculateWarrantyDays(
+    const warrantyStartDate = new Date();
+    const warrantyEndDate = calculateWarrantyEndDate(
+      warrantyStartDate,
       product.warranty,
       product.warrantyUnit
     );
-    const warrantyStartDate = new Date();
-    const warrantyEndDate = new Date(warrantyStartDate);
-    warrantyEndDate.setDate(warrantyEndDate.getDate() + warrantyDays);
-
     const warrantyPeriod = `${product.warranty} ${product.warrantyUnit}`;
-
-    console.log("Calculated Warranty Days:", warrantyDays);
-    console.log("Warranty Start Date:", warrantyStartDate);
-    console.log("Warranty End Date:", warrantyEndDate);
 
     const sale = new Sale({
       productId: product._id,
@@ -58,12 +54,6 @@ export const createSale = async (req, res) => {
     });
     await sale.save();
 
-    const savedSale = await Sale.findById(sale._id);
-    console.log(
-      "Saved Warranty End Date:",
-      savedSale.warrantyEndDate.toISOString()
-    );
-
     await Product.findByIdAndUpdate(product._id, {
       assignedToSubDealer: null,
       isAssignedToSubDealer: false,
@@ -72,20 +62,86 @@ export const createSale = async (req, res) => {
       warrantyEndDate,
     });
 
-    console.log("Sale Created:", sale);
-    res.status(201).json({
-      message: "Sale created successfully",
-      sale,
-    });
+    console.log("Sub-Dealer Sale Created:", sale);
+    res.status(201).json({ message: "Sale created successfully", sale });
   } catch (error) {
-    console.error("[Backend] Error creating sale:", error.message);
-    res.status(500).json({
-      message: "Failed to create sale",
-      error: error.message,
-    });
+    console.error("[Backend] Error creating sub-dealer sale:", error.message);
+    res
+      .status(500)
+      .json({ message: "Failed to create sale", error: error.message });
   }
 };
 
+// Dealer Sale (New)
+export const createDealerSale = async (req, res) => {
+  try {
+    const { code } = req.body;
+    const dealerId = req.dealerId;
+
+    console.log("Creating Dealer Sale - Code:", code);
+    console.log("Dealer ID:", dealerId);
+
+    if (!code) {
+      return res
+        .status(400)
+        .json({ message: "No barcode or serial number provided" });
+    }
+
+    let product = await Product.findOne({
+      $or: [{ barcode: code }, { serialNumber: code }],
+      assignedTo: dealerId,
+      isAssigned: true,
+      isAssignedToSubDealer: false, // Not assigned to sub-dealer
+    });
+
+    if (!product) {
+      return res
+        .status(404)
+        .json({ message: "Product not found or not assigned to you." });
+    }
+
+    console.log(
+      "Product Warranty:",
+      product.warranty,
+      "Unit:",
+      product.warrantyUnit
+    );
+
+    const warrantyStartDate = new Date();
+    const warrantyEndDate = calculateWarrantyEndDate(
+      warrantyStartDate,
+      product.warranty,
+      product.warrantyUnit
+    );
+    const warrantyPeriod = `${product.warranty} ${product.warrantyUnit}`;
+
+    const sale = new Sale({
+      productId: product._id,
+      dealerId,
+      warrantyStartDate,
+      warrantyEndDate,
+      warrantyPeriod,
+    });
+    await sale.save();
+
+    await Product.findByIdAndUpdate(product._id, {
+      assignedTo: null,
+      isAssigned: false,
+      warrantyStartDate,
+      warrantyEndDate,
+    });
+
+    console.log("Dealer Sale Created:", sale);
+    res.status(201).json({ message: "Dealer sale created successfully", sale });
+  } catch (error) {
+    console.error("[Backend] Error creating dealer sale:", error.message);
+    res
+      .status(500)
+      .json({ message: "Failed to create dealer sale", error: error.message });
+  }
+};
+
+// Get Sub-Dealer Sales (Existing)
 export const getSales = async (req, res) => {
   try {
     const subDealerId = req.subDealerId;
@@ -98,30 +154,57 @@ export const getSales = async (req, res) => {
 
     res.status(200).json({ sales });
   } catch (error) {
-    console.error("Error fetching sales:", error);
-    res.status(500).json({
-      message: "Failed to fetch sales",
-      error: error.message,
-    });
+    console.error("Error fetching sub-dealer sales:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch sales", error: error.message });
   }
 };
 
+// Get Dealer Sales (New)
+export const getDealerSales = async (req, res) => {
+  try {
+    const dealerId = req.dealerId;
+    const sales = await Sale.find({ dealerId })
+      .populate(
+        "productId",
+        "productName barcode serialNumber warranty warrantyUnit"
+      )
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ sales });
+  } catch (error) {
+    console.error("Error fetching dealer sales:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch dealer sales", error: error.message });
+  }
+};
+
+// Replace Product (Sub-Dealer, Existing)
 export const replaceProduct = async (req, res) => {
   try {
     const { saleId } = req.params;
     const { code } = req.body;
     const subDealerId = req.subDealerId;
 
-    console.log("Replacing Product - Sale ID:", saleId, "Code:", code);
+    console.log(
+      "Replacing Product (Sub-Dealer) - Sale ID:",
+      saleId,
+      "Code:",
+      code
+    );
 
     if (!code) {
-      return res.status(400).json({
-        message: "No barcode or serial number provided for replacement",
-      });
+      return res
+        .status(400)
+        .json({
+          message: "No barcode or serial number provided for replacement",
+        });
     }
 
     const sale = await Sale.findById(saleId).populate("productId");
-    if (!sale || sale.subDealerId.toString() !== subDealerId) {
+    if (!sale || sale.subDealerId?.toString() !== subDealerId) {
       return res
         .status(404)
         .json({ message: "Sale not found or unauthorized" });
@@ -144,18 +227,18 @@ export const replaceProduct = async (req, res) => {
       ],
     });
 
-    console.log("New Product Found:", newProduct || "None");
-
     if (!newProduct) {
-      return res.status(404).json({
-        message: "Replacement product not found or already assigned",
-      });
+      return res
+        .status(404)
+        .json({ message: "Replacement product not found or already assigned" });
     }
 
     if (newProduct.isAssignedToSubDealer) {
-      return res.status(400).json({
-        message: "Replacement product is already assigned to a sub-dealer",
-      });
+      return res
+        .status(400)
+        .json({
+          message: "Replacement product is already assigned to a sub-dealer",
+        });
     }
 
     const replacement = new Replacement({
@@ -185,20 +268,115 @@ export const replaceProduct = async (req, res) => {
 
     await Sale.findByIdAndDelete(saleId);
 
-    console.log("Replacement Created:", replacement);
-    res.status(200).json({
-      message: "Product replaced and reassigned to sub-dealer",
-      replacement,
-    });
+    console.log("Sub-Dealer Replacement Created:", replacement);
+    res
+      .status(200)
+      .json({
+        message: "Product replaced and reassigned to sub-dealer",
+        replacement,
+      });
   } catch (error) {
-    console.error("[Backend] Error replacing product:", error.message);
-    res.status(500).json({
-      message: "Failed to replace product",
-      error: error.message,
-    });
+    console.error(
+      "[Backend] Error replacing sub-dealer product:",
+      error.message
+    );
+    res
+      .status(500)
+      .json({ message: "Failed to replace product", error: error.message });
   }
 };
 
+// Replace Product (Dealer, New)
+export const replaceDealerProduct = async (req, res) => {
+  try {
+    const { saleId } = req.params;
+    const { code } = req.body;
+    const dealerId = req.dealerId;
+
+    console.log("Replacing Product (Dealer) - Sale ID:", saleId, "Code:", code);
+
+    if (!code) {
+      return res
+        .status(400)
+        .json({
+          message: "No barcode or serial number provided for replacement",
+        });
+    }
+
+    const sale = await Sale.findById(saleId).populate("productId");
+    if (!sale || sale.dealerId?.toString() !== dealerId) {
+      return res
+        .status(404)
+        .json({ message: "Sale not found or unauthorized" });
+    }
+
+    const now = new Date();
+    if (new Date(sale.warrantyEndDate) < now) {
+      return res.status(400).json({ message: "Warranty has expired" });
+    }
+
+    let newProduct = await Product.findOne({
+      $or: [{ barcode: code }, { serialNumber: code }],
+      assignedTo: null,
+      isAssigned: false,
+    });
+
+    if (!newProduct) {
+      return res
+        .status(404)
+        .json({ message: "Replacement product not found or already assigned" });
+    }
+
+    const replacement = new Replacement({
+      originalProductId: sale.productId._id,
+      newProductId: newProduct._id,
+      dealerId,
+      warrantyStartDate: sale.warrantyStartDate,
+      warrantyEndDate: sale.warrantyEndDate,
+    });
+    await replacement.save();
+
+    const newSale = new Sale({
+      productId: newProduct._id,
+      dealerId,
+      warrantyStartDate: sale.warrantyStartDate,
+      warrantyEndDate: sale.warrantyEndDate,
+      warrantyPeriod: sale.warrantyPeriod,
+    });
+    await newSale.save();
+
+    await Product.findByIdAndUpdate(newProduct._id, {
+      assignedTo: null,
+      isAssigned: false,
+      warrantyStartDate: sale.warrantyStartDate,
+      warrantyEndDate: sale.warrantyEndDate,
+    });
+
+    await Product.findByIdAndUpdate(sale.productId._id, {
+      assignedTo: null,
+      isAssigned: false,
+      warrantyStartDate: null,
+      warrantyEndDate: null,
+    });
+
+    await Sale.findByIdAndDelete(saleId);
+
+    console.log("Dealer Replacement Created:", replacement);
+    res
+      .status(200)
+      .json({
+        message: "Product replaced and new sale created for dealer",
+        replacement,
+      });
+  } catch (error) {
+    console.error("[Backend] Error replacing dealer product:", error.message);
+    res
+      .status(500)
+      .json({ message: "Failed to replace product", error: error.message });
+  }
+};
+
+// Get Sub-Dealer Replacements (Existing)
 export const getReplacements = async (req, res) => {
   try {
     const subDealerId = req.subDealerId;
@@ -209,28 +387,48 @@ export const getReplacements = async (req, res) => {
 
     res.status(200).json({ replacements });
   } catch (error) {
-    console.error("Error fetching replacements:", error);
-    res.status(500).json({
-      message: "Failed to fetch replacements",
-      error: error.message,
-    });
+    console.error("Error fetching sub-dealer replacements:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch replacements", error: error.message });
   }
 };
 
-function calculateWarrantyDays(warranty, unit) {
-  console.log("Calculating warranty days - Warranty:", warranty, "Unit:", unit);
-  const parsedWarranty = parseInt(warranty, 10);
-  if (isNaN(parsedWarranty)) {
-    throw new Error("Warranty value is not a valid number");
+// Get Dealer Replacements (New)
+export const getDealerReplacements = async (req, res) => {
+  try {
+    const dealerId = req.dealerId;
+    const replacements = await Replacement.find({ dealerId })
+      .populate("originalProductId", "productName serialNumber")
+      .populate("newProductId", "serialNumber")
+      .sort({ replacedDate: -1 });
+
+    res.status(200).json({ replacements });
+  } catch (error) {
+    console.error("Error fetching dealer replacements:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch replacements", error: error.message });
   }
+};
+
+// Warranty End Date Calculation (Helper Function)
+function calculateWarrantyEndDate(startDate, warranty, unit) {
+  const endDate = new Date(startDate);
+  const warrantyValue = parseInt(warranty, 10);
+
   switch (unit) {
     case "days":
-      return parsedWarranty;
+      endDate.setDate(endDate.getDate() + warrantyValue);
+      break;
     case "months":
-      return parsedWarranty * 30;
+      endDate.setMonth(endDate.getMonth() + warrantyValue);
+      break;
     case "years":
-      return parsedWarranty * 365;
+      endDate.setFullYear(endDate.getFullYear() + warrantyValue);
+      break;
     default:
       throw new Error(`Invalid warranty unit: ${unit}`);
   }
+  return endDate;
 }

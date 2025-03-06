@@ -57,7 +57,8 @@ const handleFileUpload = (req) => {
 export const createProduct = async (req, res) => {
   try {
     const { fields, files } = await handleFileUpload(req);
-    const { serialNumber, warranty, warrantyUnit } = fields;
+    const { serialNumber, warranty, warrantyUnit, subcategory, quantityText } =
+      fields;
 
     const existingProduct = await Product.findOne({ serialNumber });
     if (existingProduct) {
@@ -78,6 +79,7 @@ export const createProduct = async (req, res) => {
     const baseProduct = {
       productName: fields.productName,
       category: fields.category,
+      subcategory,
       power: fields.power,
       stage: fields.stage,
       maxDischarge: fields.maxDischarge,
@@ -87,6 +89,7 @@ export const createProduct = async (req, res) => {
       pipeSize: fields.pipeSize,
       description: fields.description,
       images,
+      quantityText,
       addedOn: new Date(),
       assignedTo: null,
       isAssigned: false,

@@ -106,7 +106,7 @@ export default function ProductsPage({
                 sm={12} // 2 cards per row on small screens
                 md={12} // 2 cards per row on medium screens
                 lg={12} // 2 cards per row on large screens
-                xl={24} // 2 cards per row on extra large screens
+                xl={12} // 2 cards per row on extra large screens
                 className="flex justify-center"
               >
                 <ProductCard product={product} />

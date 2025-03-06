@@ -20,7 +20,7 @@ const removeImage = (imagePath) => {
 
 export const createCategory = async (req, res) => {
   const bb = busboy({ headers: req.headers });
-  let categoryData = {};
+  let categoryData = { subcategories: [] };
   let imagePath = null;
 
   bb.on("file", (_, file, info) => {
@@ -32,7 +32,11 @@ export const createCategory = async (req, res) => {
   });
 
   bb.on("field", (key, value) => {
-    categoryData[key] = value;
+    if (key === "subcategories") {
+      categoryData.subcategories = JSON.parse(value);
+    } else {
+      categoryData[key] = value;
+    }
   });
 
   bb.on("finish", async () => {
@@ -40,11 +44,14 @@ export const createCategory = async (req, res) => {
       const newCategory = new Category({
         name: categoryData.name,
         image: imagePath,
+        subcategories: categoryData.subcategories,
       });
       await newCategory.save();
       res.status(201).json(newCategory);
     } catch (error) {
-      res.status(500).json({ error: "Error creating category" });
+      res
+        .status(500)
+        .json({ error: "Error creating category", details: error.message });
     }
   });
 
@@ -57,7 +64,7 @@ export const updateCategory = async (req, res) => {
   if (!category) return res.status(404).json({ error: "Category not found" });
 
   const bb = busboy({ headers: req.headers });
-  let updatedData = {};
+  let updatedData = { subcategories: category.subcategories };
   let newImagePath = null;
 
   bb.on("file", (_, file, info) => {
@@ -69,12 +76,19 @@ export const updateCategory = async (req, res) => {
   });
 
   bb.on("field", (key, value) => {
-    updatedData[key] = value;
+    if (key === "subcategories") {
+      updatedData.subcategories = JSON.parse(value);
+    } else {
+      updatedData[key] = value;
+    }
   });
 
   bb.on("finish", async () => {
     try {
-      const updateFields = { name: updatedData.name };
+      const updateFields = {
+        name: updatedData.name,
+        subcategories: updatedData.subcategories,
+      };
       if (newImagePath) {
         if (category.image) removeImage(category.image);
         updateFields.image = newImagePath;
@@ -86,13 +100,13 @@ export const updateCategory = async (req, res) => {
       const updatedCategory = await Category.findByIdAndUpdate(
         id,
         updateFields,
-        {
-          new: true,
-        }
+        { new: true }
       );
       res.json(updatedCategory);
     } catch (error) {
-      res.status(500).json({ error: "Error updating category" });
+      res
+        .status(500)
+        .json({ error: "Error updating category", details: error.message });
     }
   });
 

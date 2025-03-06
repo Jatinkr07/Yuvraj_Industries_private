@@ -1,3 +1,4 @@
+// Model/SaleModel.js
 import mongoose from "mongoose";
 
 const saleSchema = new mongoose.Schema({
@@ -9,34 +10,29 @@ const saleSchema = new mongoose.Schema({
   subDealerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "SubDealer",
-    required: true,
+    required: false,
+  },
+  dealerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Dealer",
+    required: false,
   },
   warrantyStartDate: {
     type: Date,
-    default: Date.now,
+    required: true,
+  },
+  warrantyEndDate: {
+    type: Date,
+    required: true,
   },
   warrantyPeriod: {
     type: String,
     required: true,
   },
-  warrantyEndDate: {
-    type: Date,
-  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
-});
-
-saleSchema.pre("save", function (next) {
-  if (this.warrantyStartDate && this.warrantyPeriod) {
-    const years = parseInt(this.warrantyPeriod.match(/\d+/)[0], 10);
-    this.warrantyEndDate = new Date(this.warrantyStartDate);
-    this.warrantyEndDate.setFullYear(
-      this.warrantyEndDate.getFullYear() + years
-    );
-  }
-  next();
 });
 
 export default mongoose.model("SaleModel", saleSchema);

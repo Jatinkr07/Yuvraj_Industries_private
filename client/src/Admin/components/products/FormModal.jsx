@@ -1,4 +1,3 @@
-// FormModal.jsx
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import { Modal, Form, Input, Select, Upload, Button, message } from "antd";
@@ -11,6 +10,7 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -22,6 +22,7 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
       form.setFieldsValue({
         ...initialValues,
         category: initialValues.category?._id || initialValues.category,
+        subcategory: initialValues.subcategory,
         warranty: initialValues.warranty
           ? Math.floor(
               initialValues.warranty /
@@ -46,11 +47,19 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
       } else {
         setFileList([]);
       }
+
+      if (initialValues.category) {
+        const selectedCategory = categories.find(
+          (cat) => cat._id === initialValues.category
+        );
+        setSubcategories(selectedCategory?.subcategories || []);
+      }
     } else {
       form.resetFields();
       setFileList([]);
+      setSubcategories([]);
     }
-  }, [initialValues, form]);
+  }, [initialValues, form, categories]);
 
   const fetchCategories = async () => {
     try {
@@ -63,6 +72,12 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCategoryChange = (categoryId) => {
+    const selectedCategory = categories.find((cat) => cat._id === categoryId);
+    setSubcategories(selectedCategory?.subcategories || []);
+    form.setFieldsValue({ subcategory: null });
   };
 
   const handleChange = ({ fileList: newFileList }) => {
@@ -125,10 +140,29 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
               placeholder="Select category"
               className="h-12 bg-gray-100"
               loading={loading}
+              onChange={handleCategoryChange}
             >
               {categories.map((cat) => (
                 <Select.Option key={cat._id} value={cat._id}>
                   {cat.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Select Subcategory"
+            name="subcategory"
+            rules={[{ required: true, message: "Subcategory is required" }]}
+          >
+            <Select
+              placeholder="Select subcategory"
+              className="h-12 bg-gray-100"
+              disabled={!subcategories.length}
+            >
+              {subcategories.map((sub) => (
+                <Select.Option key={sub.name} value={sub.name}>
+                  {sub.name}
                 </Select.Option>
               ))}
             </Select>
@@ -181,13 +215,24 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
           </Form.Item>
 
           <Form.Item
-            label="Quantity"
+            label="Quantity (Number)"
             name="quantity"
             rules={[{ required: true, message: "Quantity is required" }]}
           >
             <Input
               type="number"
               placeholder="Enter quantity"
+              className="h-12 bg-gray-100"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Quantity (Text)"
+            name="quantityText"
+            rules={[{ required: true, message: "Quantity text is required" }]}
+          >
+            <Input
+              placeholder="Enter quantity text (e.g., 'In Stock')"
               className="h-12 bg-gray-100"
             />
           </Form.Item>

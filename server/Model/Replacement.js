@@ -14,11 +14,12 @@ const replacementSchema = new mongoose.Schema({
   subDealerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "SubDealer",
-    required: true,
+    required: false,
   },
-  replacedDate: {
-    type: Date,
-    default: Date.now,
+  dealerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Dealer",
+    required: false,
   },
   warrantyStartDate: {
     type: Date,
@@ -28,7 +29,7 @@ const replacementSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  createdAt: {
+  replacedDate: {
     type: Date,
     default: Date.now,
   },

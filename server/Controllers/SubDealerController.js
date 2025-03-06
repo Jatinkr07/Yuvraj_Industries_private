@@ -58,7 +58,7 @@ export const subDealerLogin = async (req, res) => {
 
 export const getSubDealers = async (req, res) => {
   try {
-    console.log("Dealer ---->", req.dealerId);
+    // console.log("Dealer ---->", req.dealerId);
     const subDealers = await SubDealer.find({ createdBy: req.dealerId }).select(
       "-password"
     );

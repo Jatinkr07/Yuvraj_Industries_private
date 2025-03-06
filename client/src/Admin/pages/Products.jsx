@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable no-unused-vars */
+
 import { useState, useEffect, useCallback } from "react";
-import { Table, Input, Button, Select, Modal, message } from "antd";
+import { Table, Input, Button, Select, Modal, message, QRCode } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
@@ -9,10 +9,11 @@ import {
   SearchOutlined,
   DownloadOutlined,
   QrcodeOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
-import Barcode from "react-barcode";
 import { saveAs } from "file-saver";
 import FormModal from "../components/products/FormModal";
+import ProductTemplate from "./Template/Template.jsx";
 import {
   createProduct,
   getProducts,
@@ -20,13 +21,12 @@ import {
   deleteProduct,
 } from "../../Services/api.js";
 
-// const POLLING_INTERVAL = 3000;
-
 const Products = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [products, setProducts] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -66,14 +66,6 @@ const Products = () => {
     fetchProducts();
   }, [fetchProducts]);
 
-  // useEffect(() => {
-  //   const intervalId = setInterval(() => {
-  //     fetchProducts();
-  //   }, POLLING_INTERVAL);
-
-  //   return () => clearInterval(intervalId);
-  // }, [fetchProducts]);
-
   const handleCreate = async (values) => {
     try {
       await createProduct(values);
@@ -81,19 +73,17 @@ const Products = () => {
       fetchProducts();
       setIsModalOpen(false);
     } catch (error) {
-      message.error(
-        "This serial number is already created. Try a new one to create the product."
-      );
+      message.error("This serial number is already created. Try a new one.");
       console.error("Error creating product:", error);
     }
   };
 
-  const handleTableChange = (newPagination, filters, sorter) => {
+  const handleTableChange = (newPagination) => {
     setPagination(newPagination);
     fetchProducts(newPagination.current, newPagination.pageSize);
   };
 
-  const handleUpdate = async (product) => {
+  const handleUpdate = (product) => {
     setEditingProduct(product);
     setIsModalOpen(true);
   };
@@ -131,52 +121,45 @@ const Products = () => {
     });
   };
 
-  const showBarcode = (product) => {
+  const showQRCode = (product) => {
     setSelectedProduct(product);
-    setIsBarcodeModalOpen(true);
+    setIsQRModalOpen(true);
   };
 
-  const downloadBarcode = () => {
+  const showTemplate = (product) => {
+    setSelectedProduct(product);
+    setIsTemplateModalOpen(true);
+  };
+
+  const downloadQRCode = () => {
     if (!selectedProduct) return;
 
-    const barcodeElement = document.querySelector("#product-barcode svg");
-    if (!barcodeElement) {
-      message.error("Barcode not found!");
+    const qrCanvas = document.querySelector(".ant-qrcode canvas");
+    if (!qrCanvas) {
+      message.error("QR Code not found!");
       return;
     }
 
-    const serializer = new XMLSerializer();
-    const svgStr = serializer.serializeToString(barcodeElement);
-    const img = new Image();
-    img.src = "data:image/svg+xml;base64," + btoa(svgStr);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const qrWidth = qrCanvas.width;
+    const qrHeight = qrCanvas.height;
+    const textHeight = 30;
+    canvas.width = qrWidth;
+    canvas.height = qrHeight + textHeight;
 
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(qrCanvas, 0, 0);
 
-      const barcodeWidth = img.width;
-      const barcodeHeight = img.height;
-      const textHeight = 30;
-      canvas.width = barcodeWidth;
-      canvas.height = barcodeHeight + textHeight;
+    ctx.fillStyle = "#000";
+    ctx.font = "16px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(selectedProduct.serialNumber, qrWidth / 2, qrHeight + 20);
 
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-
-      ctx.fillStyle = "#000";
-      ctx.font = "16px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText(
-        selectedProduct.serialNumber,
-        barcodeWidth / 2,
-        barcodeHeight + 20
-      );
-
-      canvas.toBlob((blob) => {
-        saveAs(blob, `barcode-${selectedProduct.serialNumber}.png`);
-      });
-    };
+    canvas.toBlob((blob) => {
+      saveAs(blob, `qrcode-${selectedProduct.serialNumber}.png`);
+    });
   };
 
   const handleSearch = useCallback((value) => {
@@ -210,23 +193,43 @@ const Products = () => {
       key: "productName",
     },
     {
-      title: "Barcode",
-      key: "barcode",
+      title: "QR Code",
+      key: "qrcode",
       width: 150,
       render: (_, record) => (
         <Button
           type="link"
-          onClick={() => showBarcode(record)}
+          onClick={() => showQRCode(record)}
           icon={<QrcodeOutlined />}
         >
-          View Barcode
+          View QR Code
         </Button>
       ),
     },
     {
       title: "Template",
-      dataIndex: ["category", "name"],
       key: "template",
+      width: 150,
+      render: (_, record) => (
+        <Button
+          type="link"
+          onClick={() => showTemplate(record)}
+          icon={<EyeOutlined />}
+        >
+          View Template
+        </Button>
+      ),
+    },
+    {
+      title: "Category",
+      dataIndex: ["category", "name"],
+      key: "category",
+      width: 120,
+    },
+    {
+      title: "Subcategory",
+      dataIndex: "subcategory",
+      key: "subcategory",
       width: 120,
     },
     {
@@ -236,12 +239,6 @@ const Products = () => {
       width: 120,
       render: (date) => new Date(date).toLocaleDateString(),
     },
-    // {
-    //   title: "Quantity",
-    //   dataIndex: "quantity",
-    //   key: "quantity",
-    //   width: 120,
-    // },
     {
       title: "Actions",
       key: "action",
@@ -291,7 +288,6 @@ const Products = () => {
               { value: "spare", label: "Spare Parts" },
             ]}
           />
-
           <div className="flex-grow">
             <Input
               placeholder="Search by name or serial number"
@@ -324,15 +320,15 @@ const Products = () => {
         />
 
         <Modal
-          title="Product Barcode"
-          open={isBarcodeModalOpen}
-          onCancel={() => setIsBarcodeModalOpen(false)}
+          title="Product QR Code"
+          open={isQRModalOpen}
+          onCancel={() => setIsQRModalOpen(false)}
           footer={[
             <Button
               key="download"
               type="primary"
               icon={<DownloadOutlined />}
-              onClick={downloadBarcode}
+              onClick={downloadQRCode}
             >
               Download
             </Button>,
@@ -341,22 +337,22 @@ const Products = () => {
         >
           {selectedProduct && (
             <div className="flex flex-col items-center">
-              <div id="product-barcode">
-                <Barcode
-                  value={
-                    selectedProduct.barcode || selectedProduct.serialNumber
-                  }
-                  width={1.5}
-                  height={80}
-                  fontSize={14}
-                />
-              </div>
+              <QRCode
+                value={selectedProduct.barcode || selectedProduct.serialNumber}
+                size={150}
+              />
               <p className="mt-4 text-center text-gray-600">
                 Serial Number: {selectedProduct.serialNumber}
               </p>
             </div>
           )}
         </Modal>
+
+        <ProductTemplate
+          product={selectedProduct}
+          visible={isTemplateModalOpen}
+          onClose={() => setIsTemplateModalOpen(false)}
+        />
       </div>
     </div>
   );

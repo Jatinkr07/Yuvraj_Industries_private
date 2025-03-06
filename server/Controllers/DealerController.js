@@ -52,7 +52,7 @@ export const dealerLogin = async (req, res) => {
       sameSite: "lax",
       maxAge: 3600000,
     });
-    console.log("Login --> token -->", token);
+    // console.log("Login --> token -->", token);
     res.status(200).json({
       message: "Login successful",
       dealerId: dealer._id,

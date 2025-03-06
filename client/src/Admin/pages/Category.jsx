@@ -16,8 +16,8 @@ const Category = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [searchText, setSearchText] = useState("");
 
-  // Fetch categories function
   const fetchCategories = async () => {
     setLoading(true);
     try {
@@ -31,16 +31,15 @@ const Category = () => {
     }
   };
 
-  // Run fetchCategories only on mount
   useEffect(() => {
     fetchCategories();
-  }, []); // Empty dependency array ensures it runs once on mount
+  }, []);
 
   const handleDelete = async (id) => {
     try {
       await deleteCategory(id);
       message.success("Category deleted successfully!");
-      fetchCategories(); // Refresh after delete
+      fetchCategories();
     } catch (error) {
       message.error("Failed to delete category");
     }
@@ -54,6 +53,22 @@ const Category = () => {
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedCategory(null);
+  };
+
+  const handleSearch = (value) => {
+    setSearchText(value);
+    if (!value) {
+      fetchCategories(); // Reset to full list if search is cleared
+    } else {
+      const filtered = categories.filter(
+        (cat) =>
+          cat.name.toLowerCase().includes(value.toLowerCase()) ||
+          cat.subcategories.some((sub) =>
+            sub.name.toLowerCase().includes(value.toLowerCase())
+          )
+      );
+      setCategories(filtered);
+    }
   };
 
   const columns = [
@@ -106,6 +121,26 @@ const Category = () => {
     },
   ];
 
+  const expandedRowRender = (record) => {
+    const subColumns = [
+      {
+        title: "Subcategory Name",
+        dataIndex: "name",
+        key: "name",
+      },
+    ];
+
+    return (
+      <Table
+        columns={subColumns}
+        dataSource={record.subcategories || []}
+        pagination={false}
+        rowKey="name"
+        scroll={{ y: 300 }} // Vertical scroll for subcategories
+      />
+    );
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen p-6">
       <div className="bg-white rounded-lg shadow-sm p-6">
@@ -132,9 +167,11 @@ const Category = () => {
             ]}
           />
           <Input
-            placeholder="Search"
+            placeholder="Search by name"
             suffix={<SearchOutlined />}
             className="max-w-sm"
+            value={searchText}
+            onChange={(e) => handleSearch(e.target.value)}
           />
           <Select
             defaultValue="category"
@@ -154,7 +191,12 @@ const Category = () => {
           loading={loading}
           rowKey="_id"
           pagination={{ pageSize: 10 }}
-          scroll={{ x: 1000 }}
+          scroll={{ x: 1000, y: 500 }} // Vertical scroll for main table
+          expandable={{
+            expandedRowRender,
+            rowExpandable: (record) =>
+              record.subcategories && record.subcategories.length > 0,
+          }}
         />
       </div>
 

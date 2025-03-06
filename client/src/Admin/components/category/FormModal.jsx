@@ -1,8 +1,13 @@
+/* eslint-disable react/jsx-key */
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
-import { Modal, Form, Input, Upload, Button, message } from "antd";
-import { UploadOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Modal, Form, Input, Upload, Button, message, Space, List } from "antd";
+import {
+  UploadOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+} from "@ant-design/icons";
 import {
   API_URL,
   createCategory,
@@ -15,12 +20,14 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
   const [fileList, setFileList] = useState([]);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [imageDeleted, setImageDeleted] = useState(false);
+  const [subcategories, setSubcategories] = useState([]);
+  const [subcategoryName, setSubcategoryName] = useState("");
 
   useEffect(() => {
-    // Only run when modal opens or initialData changes
     if (isOpen) {
       if (initialData) {
         form.setFieldsValue({ category: initialData.name });
+        setSubcategories(initialData.subcategories || []);
         if (initialData.image) {
           const imageUrl = `${API_URL}/${initialData.image}`;
           setPreviewUrl(imageUrl);
@@ -34,6 +41,7 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
         setFileList([]);
         setPreviewUrl(null);
         setImageDeleted(false);
+        setSubcategories([]);
       }
     }
   }, [isOpen, initialData, form]);
@@ -71,9 +79,28 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
     }
   };
 
+  const addSubcategory = () => {
+    if (!subcategoryName.trim()) {
+      message.error("Subcategory name is required");
+      return;
+    }
+    const newSubcategory = { name: subcategoryName };
+    setSubcategories([...subcategories, newSubcategory]);
+    setSubcategoryName("");
+  };
+
+  const removeSubcategory = (index) => {
+    const updatedSubcategories = subcategories.filter((_, i) => i !== index);
+    setSubcategories(updatedSubcategories);
+  };
+
   const handleSubmit = async (values) => {
     const formData = new FormData();
     formData.append("name", values.category);
+    formData.append(
+      "subcategories",
+      JSON.stringify(subcategories.map((sub) => ({ name: sub.name })))
+    );
 
     if (fileList.length > 0 && fileList[0].originFileObj) {
       formData.append("image", fileList[0].originFileObj);
@@ -93,8 +120,9 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
       setFileList([]);
       setPreviewUrl(null);
       setImageDeleted(false);
+      setSubcategories([]);
       onClose();
-      refreshData(); // Trigger refresh only once after success
+      refreshData();
     } catch (error) {
       message.error("Error saving category");
     }
@@ -107,6 +135,7 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
       onCancel={onClose}
       footer={null}
       centered
+      width={600}
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
         <Form.Item
@@ -140,7 +169,6 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
               src={previewUrl}
               alt="Preview"
               className="w-full h-40 object-cover rounded-md"
-              onError={(e) => (e.target.src = "/fallback-image.jpg")} // Fallback for broken images
             />
             <Button
               className="absolute top-2 right-2 bg-red-500 text-white"
@@ -149,6 +177,44 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
             />
           </div>
         )}
+
+        <div className="mt-4">
+          <h3 className="text-lg font-semibold">Subcategories</h3>
+          <Space direction="vertical" className="w-full">
+            <Input
+              placeholder="Enter Subcategory Name"
+              value={subcategoryName}
+              onChange={(e) => setSubcategoryName(e.target.value)}
+              className="h-12 bg-gray-100"
+            />
+            <Button
+              type="dashed"
+              onClick={addSubcategory}
+              icon={<PlusOutlined />}
+              className="w-full h-12"
+            >
+              Add Subcategory
+            </Button>
+          </Space>
+          <List
+            dataSource={subcategories}
+            renderItem={(item, index) => (
+              <List.Item
+                actions={[
+                  <Button
+                    type="link"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={() => removeSubcategory(index)}
+                  />,
+                ]}
+              >
+                {item.name}
+              </List.Item>
+            )}
+            className="mt-2"
+          />
+        </div>
 
         <div className="flex justify-start mt-10 gap-4">
           <Button
