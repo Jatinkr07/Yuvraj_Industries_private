@@ -23,16 +23,16 @@ const ProductTemplate = ({ product, visible, onClose }) => {
         </div>
 
         <div className="border-t border-b border-gray-300 p-2 text-center">
-          <p className="text-xs font-semibold">
+          <p className="text-2xl font-semibold">
             {/* MFD. BY: YUVRAJ INDUSTRIES, FARIDABAD (HARYANA) */}
-            {product?.category?.name?.toUpperCase() || "N/A"}
+            MFG BY :- {product?.category?.name?.toUpperCase() || "N/A"}
           </p>
           <p className="text-xs">(AN ISO 9001 - 2015 CERTIFIED CO.)</p>
         </div>
 
         <div className="border-b border-gray-300 p-1 text-center">
           <p className="text-sm font-semibold">
-            <p className="text-xs">{product?.subcategory || "N/A"}</p>
+            <p className="text-lg">{product?.subcategory || "N/A"}</p>
           </p>
         </div>
 
