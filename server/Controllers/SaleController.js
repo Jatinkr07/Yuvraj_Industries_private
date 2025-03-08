@@ -411,7 +411,7 @@ export const replaceDealerProduct = async (req, res) => {
     }
 
     const now = new Date();
-    if (new Date(sale.warrantyEndDate) < now) {
+    if (new Date(sale.warrantyEndDate) <= now) {
       return res.status(400).json({ message: "Warranty has expired" });
     }
 
@@ -440,6 +440,7 @@ export const replaceDealerProduct = async (req, res) => {
       dealerId,
       warrantyStartDate: remainingWarrantyStart,
       warrantyEndDate: remainingWarrantyEnd,
+      replacedDate: new Date(),
     });
     await replacement.save();
 
@@ -453,13 +454,15 @@ export const replaceDealerProduct = async (req, res) => {
     });
     await newSale.save();
 
+    // Update the new product to reflect it has been sold (remove from assignable pool)
     await Product.findByIdAndUpdate(newProduct._id, {
-      assignedTo: dealerId,
-      isAssigned: true,
+      assignedTo: null,
+      isAssigned: false,
       warrantyStartDate: remainingWarrantyStart,
       warrantyEndDate: remainingWarrantyEnd,
     });
 
+    // Update the original product to reflect it has been replaced
     await Product.findByIdAndUpdate(sale.productId._id, {
       assignedTo: null,
       isAssigned: false,
@@ -468,6 +471,7 @@ export const replaceDealerProduct = async (req, res) => {
       isReplaced: true,
     });
 
+    // Delete the original sale
     await Sale.findByIdAndDelete(saleId);
 
     res.status(200).json({

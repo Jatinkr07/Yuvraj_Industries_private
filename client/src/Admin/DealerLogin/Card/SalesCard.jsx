@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
+
 import { Button } from "antd";
 
 export default function SalesCard({
@@ -8,9 +9,12 @@ export default function SalesCard({
   date,
   warrantyPeriod,
   warrantyEndDate,
+  warranty,
+  warrantyUnit,
   onReplace,
-  isWarrantyActive,
 }) {
+  const isWarrantyActive = new Date(warrantyEndDate) > new Date(); // True if warranty is active
+
   return (
     <div className="max-w-9xl mx-auto p-4 grid lg:grid-cols-1">
       <div className="border-2 border-black rounded-sm">
@@ -19,6 +23,7 @@ export default function SalesCard({
             MFD. BY - YUVRAJ INDUSTRIES, FARIDABAD, HARYANA
           </h1>
         </div>
+
         <div className="grid grid-cols-2 border-b border-gray-300">
           <div className="p-3 border-r border-gray-800">
             <p className="text-sm md:text-lg">{type}</p>
@@ -27,6 +32,7 @@ export default function SalesCard({
             <p className="text-sm md:text-lg">S.R. NO. - {srNo}</p>
           </div>
         </div>
+
         <div className="grid grid-cols-2 border-b border-gray-300">
           <div className="p-3 border-r border-gray-700">
             <div className="space-y-2">
@@ -43,6 +49,7 @@ export default function SalesCard({
             </div>
           </div>
         </div>
+
         <div className="flex justify-between items-center p-3">
           <div className="w-24 h-12 relative">
             <img src="/logo.webp" className="object-contain" alt="Logo" />
@@ -51,7 +58,7 @@ export default function SalesCard({
             type="primary"
             size="large"
             className="bg-[#4338CA] hover:bg-[#3730A3] border-none rounded-md px-8"
-            disabled={isWarrantyActive}
+            disabled={!isWarrantyActive} // Enable only when warranty is active
             onClick={onReplace}
           >
             Replace

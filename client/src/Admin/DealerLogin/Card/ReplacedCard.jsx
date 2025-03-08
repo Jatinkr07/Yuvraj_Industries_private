@@ -7,7 +7,7 @@ export default function ReplacedCard({
   warrantyPeriod,
 }) {
   return (
-    <div className="max-w-9xl grid grid-cols-2 mx-auto p-4">
+    <div className="max-w-9xl grid grid-cols-1 mx-auto p-4">
       <div className="border-2 border-gray-800">
         {/* Header */}
         <div className="border-b border-gray-300 p-4">
@@ -18,15 +18,15 @@ export default function ReplacedCard({
 
         <div className="grid grid-cols-3 text-nowrap border text-center border-gray-300">
           <div className="p-2 border-r border-gray-800 flex flex-col justify-center">
-            <h2 className="text-xs md:text-xl text-gray-600">{type}</h2>
+            <h2 className="text-xs md:text-base text-gray-600">{type}</h2>
           </div>
           <div className="p-2 border-r border-gray-800 flex flex-col justify-center">
-            <h2 className="text-xs md:text-xl text-gray-600">
-              S.R. NO. - {srNo}
+            <h2 className="text-xs md:text-base text-gray-600">
+              Old S.R. NO. - {srNo}
             </h2>
           </div>
           <div className="p-1 flex flex-col justify-center">
-            <h2 className="text-[11px] md:text-xl text-gray-600">
+            <h2 className="text-[11px] md:text-base text-gray-600">
               NEW NO. - {newNo}
             </h2>
           </div>

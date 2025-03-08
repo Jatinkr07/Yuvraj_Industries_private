@@ -22,7 +22,7 @@ export default function DealerSalesPage() {
       const response = await axios.get(`${API_URL}/api/sale/v1/dealer/sales`, {
         withCredentials: true,
       });
-      console.log("Fetched Sales:", response.data.sales); // Debug log
+      console.log("Fetched Sales:", response.data.sales);
       setSales(response.data.sales || []);
     } catch (error) {
       console.error("Error fetching dealer sales:", error);
@@ -34,9 +34,7 @@ export default function DealerSalesPage() {
     try {
       const response = await axios.get(
         `${API_URL}/api/sale/v1/dealer/replacements`,
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
       console.log("Dealer Replacements updated:", response.data.replacements);
     } catch (error) {
@@ -54,7 +52,7 @@ export default function DealerSalesPage() {
       setSales((prev) => [response.data.sale, ...prev]);
       message.success("Sale created successfully");
       setIsScannerOpen(false);
-      fetchSales(); // Refresh sales list
+      fetchSales();
     } catch (error) {
       message.error(error.response?.data?.message || "Failed to create sale");
     }
@@ -72,7 +70,7 @@ export default function DealerSalesPage() {
       setIsReplaceScannerOpen(false);
       setSelectedSaleId(null);
       fetchReplacements();
-      fetchSales(); // Refresh sales list after replacement
+      fetchSales();
     } catch (error) {
       console.error("Dealer Replace Error:", error.response?.data);
       message.error(
@@ -96,9 +94,9 @@ export default function DealerSalesPage() {
         now,
         "Is Active:",
         isWarrantyActive
-      ); // Enhanced debug log
-      if (isWarrantyActive) {
-        message.warning("Cannot replace product while warranty is active.");
+      );
+      if (!isWarrantyActive) {
+        message.warning("Cannot replace product after warranty expires.");
         return;
       }
       setSelectedSaleId(saleId);
@@ -165,8 +163,9 @@ export default function DealerSalesPage() {
                   sale.warrantyEndDate
                 ).toLocaleDateString()})`}
                 warrantyEndDate={sale.warrantyEndDate}
+                warranty={sale.warranty}
+                warrantyUnit={sale.warrantyUnit}
                 onReplace={() => handleReplaceClick(sale._id)}
-                isWarrantyActive={new Date(sale.warrantyEndDate) > new Date()}
               />
             </Col>
           ))
@@ -189,6 +188,7 @@ export default function DealerSalesPage() {
           setSelectedSaleId(null);
         }}
         onScanSuccess={handleReplaceScanSuccess}
+        title="Scan to Replace Product"
       />
     </div>
   );

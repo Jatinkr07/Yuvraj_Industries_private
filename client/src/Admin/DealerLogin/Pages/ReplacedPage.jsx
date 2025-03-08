@@ -47,7 +47,7 @@ export default function DealerReplacedPage() {
       <Row gutter={[16, 16]}>
         {filteredReplacements.length > 0 ? (
           filteredReplacements.map((item) => (
-            <Col xs={24} sm={24} md={24} lg={8} xl={24} key={item._id}>
+            <Col xs={24} sm={24} md={24} lg={8} xl={12} key={item._id}>
               <ReplacedCard
                 type={item.originalProductId?.productName || "SUBMERSIBLE SET"}
                 srNo={item.originalProductId?.serialNumber || "N/A"}

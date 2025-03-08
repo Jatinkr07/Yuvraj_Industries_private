@@ -81,6 +81,8 @@ export const createProduct = async (req, res) => {
       category: fields.category,
       subcategory,
       power: fields.power,
+      phase: fields.phase,
+      volts: fields.volts,
       stage: fields.stage,
       maxDischarge: fields.maxDischarge,
       maxHead: fields.maxHead,

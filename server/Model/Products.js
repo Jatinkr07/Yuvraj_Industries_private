@@ -11,6 +11,8 @@ const productSchema = new mongoose.Schema(
     },
     subcategory: { type: String, required: true },
     power: { type: String, required: true, trim: true },
+    volts: { type: String, required: true, trim: true },
+    phase: { type: String, required: true, trim: true },
     stage: { type: String, required: true, trim: true },
     maxDischarge: { type: String, required: true, trim: true },
     maxHead: { type: String, required: true, trim: true },

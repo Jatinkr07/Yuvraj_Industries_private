@@ -121,17 +121,6 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
       <Form form={form} layout="vertical" className="mt-4">
         <div className="grid grid-cols-2 gap-6">
           <Form.Item
-            label="Product Name"
-            name="productName"
-            rules={[{ required: true, message: "Product name is required" }]}
-          >
-            <Input
-              placeholder="Enter product name"
-              className="h-12 bg-gray-100"
-            />
-          </Form.Item>
-
-          <Form.Item
             label="Select Category"
             name="category"
             rules={[{ required: true, message: "Category is required" }]}
@@ -169,11 +158,36 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
           </Form.Item>
 
           <Form.Item
-            label="Power"
+            label="Product Name"
+            name="productName"
+            rules={[{ required: true, message: "Product name is required" }]}
+          >
+            <Input
+              placeholder="Enter product name"
+              className="h-12 bg-gray-100"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="KW/HP"
             name="power"
             rules={[{ required: true, message: "Power is required" }]}
           >
-            <Input placeholder="Enter power" className="h-12 bg-gray-100" />
+            <Input placeholder="Enter KW/HP" className="h-12 bg-gray-100" />
+          </Form.Item>
+          <Form.Item
+            label="Phase"
+            name="phase"
+            rules={[{ required: true, message: "Phase is required" }]}
+          >
+            <Input placeholder="Enter Phase" className="h-12 bg-gray-100" />
+          </Form.Item>
+          <Form.Item
+            label="Volts"
+            name="volts"
+            rules={[{ required: true, message: "Volts is required" }]}
+          >
+            <Input placeholder="Enter Volts" className="h-12 bg-gray-100" />
           </Form.Item>
 
           <Form.Item
@@ -263,11 +277,14 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
           </div>
 
           <Form.Item
-            label="Pipe Size"
+            label="Delivery Size"
             name="pipeSize"
-            rules={[{ required: true, message: "Pipe size is required" }]}
+            rules={[{ required: true, message: "Delivery Size is required" }]}
           >
-            <Input placeholder="Enter pipe size" className="h-12 bg-gray-100" />
+            <Input
+              placeholder="Enter delivery size"
+              className="h-12 bg-gray-100"
+            />
           </Form.Item>
 
           <Form.Item label="Image" name="image">

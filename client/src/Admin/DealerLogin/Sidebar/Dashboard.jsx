@@ -20,19 +20,19 @@ export default function Dashboard() {
       icon: <TeamOutlined style={{ fontSize: 24, color: "#16a34a" }} />,
       label: "Sub Dealers",
       description: "Dealer management",
-      href: "/sub-dealers",
+      href: "/dealer/subdealers",
     },
     {
       icon: <FileTextOutlined style={{ fontSize: 24, color: "#16a34a" }} />,
       label: "Sales",
       description: "Sales records",
-      href: "/sales",
+      href: "/dealer/sales",
     },
     {
       icon: <SyncOutlined style={{ fontSize: 24, color: "#16a34a" }} />,
       label: "Replaced",
       description: "Replacement history",
-      href: "/replaced",
+      href: "/dealer/replaced",
     },
   ];
 
