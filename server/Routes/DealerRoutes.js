@@ -1,4 +1,3 @@
-// backend/routes/dealerRoutes.js
 import express from "express";
 import {
   createDealer,

@@ -44,7 +44,12 @@ const productSchema = new mongoose.Schema(
     },
     isAssignedToSubDealer: { type: Boolean, default: false },
     assignedToSubDealerAt: { type: Date },
+    isReplaced: {
+      type: Boolean,
+      default: false,
+    },
   },
+
   { timestamps: true }
 );
 

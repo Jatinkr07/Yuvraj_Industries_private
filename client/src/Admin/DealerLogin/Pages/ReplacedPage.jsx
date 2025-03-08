@@ -1,4 +1,3 @@
-// DealerReplacedPage.jsx
 import { useState, useEffect } from "react";
 import { Col, Input, Row } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
@@ -17,7 +16,7 @@ export default function DealerReplacedPage() {
   const fetchReplacements = async () => {
     try {
       const response = await axios.get(
-        `${API_URL}/api/sale/dealer/replacements`,
+        `${API_URL}/api/sale/v1/dealer/replacements`,
         { withCredentials: true }
       );
       setReplacements(response.data.replacements || []);

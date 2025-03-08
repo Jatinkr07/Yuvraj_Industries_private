@@ -29,6 +29,7 @@ const saleSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  soldBy: { type: String, enum: ["dealer", "subDealer"] },
   createdAt: {
     type: Date,
     default: Date.now,

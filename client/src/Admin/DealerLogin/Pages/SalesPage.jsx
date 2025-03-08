@@ -1,4 +1,3 @@
-// DealerSalesPage.jsx
 import { useState, useEffect } from "react";
 import { Col, Input, Row, Select, Button, message } from "antd";
 import { PlusOutlined, SearchOutlined } from "@ant-design/icons";
@@ -20,9 +19,10 @@ export default function DealerSalesPage() {
 
   const fetchSales = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/sale/dealer/sales`, {
+      const response = await axios.get(`${API_URL}/api/sale/v1/dealer/sales`, {
         withCredentials: true,
       });
+      console.log("Fetched Sales:", response.data.sales); // Debug log
       setSales(response.data.sales || []);
     } catch (error) {
       console.error("Error fetching dealer sales:", error);
@@ -30,16 +30,31 @@ export default function DealerSalesPage() {
     }
   };
 
+  const fetchReplacements = async () => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/sale/v1/dealer/replacements`,
+        {
+          withCredentials: true,
+        }
+      );
+      console.log("Dealer Replacements updated:", response.data.replacements);
+    } catch (error) {
+      console.error("Error fetching dealer replacements:", error);
+    }
+  };
+
   const handleScanSuccess = async (code) => {
     try {
       const response = await axios.post(
-        `${API_URL}/api/sale/dealer/create`,
+        `${API_URL}/api/sale/v1/dealer/create`,
         { code },
         { withCredentials: true }
       );
       setSales((prev) => [response.data.sale, ...prev]);
       message.success("Sale created successfully");
       setIsScannerOpen(false);
+      fetchSales(); // Refresh sales list
     } catch (error) {
       message.error(error.response?.data?.message || "Failed to create sale");
     }
@@ -47,8 +62,8 @@ export default function DealerSalesPage() {
 
   const handleReplaceScanSuccess = async (code) => {
     try {
-      const response = await axios.put(
-        `${API_URL}/api/sale/dealer/replace/${selectedSaleId}`,
+      await axios.put(
+        `${API_URL}/api/sale/v1/dealer/replace/${selectedSaleId}`,
         { code },
         { withCredentials: true }
       );
@@ -56,7 +71,10 @@ export default function DealerSalesPage() {
       message.success("Product replaced successfully");
       setIsReplaceScannerOpen(false);
       setSelectedSaleId(null);
+      fetchReplacements();
+      fetchSales(); // Refresh sales list after replacement
     } catch (error) {
+      console.error("Dealer Replace Error:", error.response?.data);
       message.error(
         error.response?.data?.message || "Failed to replace product"
       );
@@ -64,8 +82,28 @@ export default function DealerSalesPage() {
   };
 
   const handleReplaceClick = (saleId) => {
-    setSelectedSaleId(saleId);
-    setIsReplaceScannerOpen(true);
+    const sale = sales.find((s) => s._id === saleId);
+    if (sale) {
+      const warrantyEndDate = new Date(sale.warrantyEndDate);
+      const now = new Date();
+      const isWarrantyActive = warrantyEndDate > now;
+      console.log(
+        "Sale ID:",
+        saleId,
+        "Warranty End Date:",
+        warrantyEndDate,
+        "Now:",
+        now,
+        "Is Active:",
+        isWarrantyActive
+      ); // Enhanced debug log
+      if (isWarrantyActive) {
+        message.warning("Cannot replace product while warranty is active.");
+        return;
+      }
+      setSelectedSaleId(saleId);
+      setIsReplaceScannerOpen(true);
+    }
   };
 
   const filteredSales = sales.filter(
@@ -116,7 +154,7 @@ export default function DealerSalesPage() {
       <Row gutter={[16, 16]}>
         {filteredSales.length > 0 ? (
           filteredSales.map((sale) => (
-            <Col xs={24} sm={12} md={12} lg={8} key={sale._id}>
+            <Col xs={24} sm={12} md={12} lg={12} key={sale._id}>
               <SalesCard
                 type={sale.productId?.productName || "SUBMERSIBLE SET"}
                 srNo={sale.productId?.serialNumber || "N/A"}

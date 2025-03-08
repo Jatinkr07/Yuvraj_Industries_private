@@ -1,13 +1,12 @@
-// SalesPage.jsx
 import { useState, useEffect } from "react";
-import { Col, Input, Row, Select, message } from "antd";
+import { Col, Input, Row, Select, Button, message } from "antd";
 import { PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import SalesCard from "../Card/SalesCard";
 import Bracode from "./BarCode/Barcode";
-import { API_URL, getSales } from "../../../Services/api.js";
 import axios from "axios";
+import { API_URL } from "../../../Services/api";
 
-export default function SalesPage() {
+export default function DealerSalesPage() {
   const [sales, setSales] = useState([]);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isReplaceScannerOpen, setIsReplaceScannerOpen] = useState(false);
@@ -20,53 +19,59 @@ export default function SalesPage() {
 
   const fetchSales = async () => {
     try {
-      const response = await getSales();
-      console.log("Sales Response:", response);
-      setSales(response.sales || []);
+      const response = await axios.get(`${API_URL}/api/sale/v1/dealer/sales`, {
+        withCredentials: true,
+      });
+      setSales(response.data.sales || []);
     } catch (error) {
-      console.error("Error fetching sales:", error);
+      console.error("Error fetching dealer sales:", error);
       message.error("Failed to fetch sales");
+    }
+  };
+
+  const fetchReplacements = async () => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/sale/v1/dealer/replacements`,
+        {
+          withCredentials: true,
+        }
+      );
+      console.log("Dealer Replacements updated:", response.data.replacements);
+    } catch (error) {
+      console.error("Error fetching dealer replacements:", error);
     }
   };
 
   const handleScanSuccess = async (code) => {
     try {
-      console.log("Creating sale with code:", code);
       const response = await axios.post(
-        `${API_URL}/api/sale/v1/create`,
+        `${API_URL}/api/sale/v1/dealer/create`,
         { code },
         { withCredentials: true }
       );
-      console.log("Sale Created:", response.data.sale);
       setSales((prev) => [response.data.sale, ...prev]);
       message.success("Sale created successfully");
       setIsScannerOpen(false);
     } catch (error) {
-      console.error("Error creating sale:", error.response?.data || error);
       message.error(error.response?.data?.message || "Failed to create sale");
     }
   };
 
   const handleReplaceScanSuccess = async (code) => {
     try {
-      console.log(
-        "Replacing product with code:",
-        code,
-        "for sale:",
-        selectedSaleId
-      );
       const response = await axios.put(
-        `${API_URL}/api/sale/v1/replace/${selectedSaleId}`,
+        `${API_URL}/api/sale/v1/dealer/replace/${selectedSaleId}`,
         { code },
         { withCredentials: true }
       );
-      console.log("Product Replaced:", response.data);
       setSales((prev) => prev.filter((sale) => sale._id !== selectedSaleId));
-      message.success("Product replaced and reassigned to sub-dealer");
+      message.success("Product replaced successfully");
       setIsReplaceScannerOpen(false);
       setSelectedSaleId(null);
+      fetchReplacements();
     } catch (error) {
-      console.error("Error replacing product:", error.response?.data || error);
+      console.error("Dealer Replace Error:", error.response?.data);
       message.error(
         error.response?.data?.message || "Failed to replace product"
       );
@@ -74,8 +79,24 @@ export default function SalesPage() {
   };
 
   const handleReplaceClick = (saleId) => {
-    setSelectedSaleId(saleId);
-    setIsReplaceScannerOpen(true);
+    const sale = sales.find((s) => s._id === saleId);
+    if (sale) {
+      const isWarrantyActive = new Date(sale.warrantyEndDate) > new Date();
+      console.log(
+        "Sale ID:",
+        saleId,
+        "Warranty End Date:",
+        sale.warrantyEndDate,
+        "Is Active:",
+        isWarrantyActive
+      ); // Debug log
+      if (isWarrantyActive) {
+        message.warning("Cannot replace product while warranty is active.");
+        return;
+      }
+      setSelectedSaleId(saleId);
+      setIsReplaceScannerOpen(true);
+    }
   };
 
   const filteredSales = sales.filter(
@@ -88,32 +109,40 @@ export default function SalesPage() {
   );
 
   return (
-    <div className="p-4">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div className="flex flex-wrap items-center gap-4">
-          <Select
-            placeholder="Warranty"
-            style={{ width: 200, height: 40 }}
-            options={[
-              { value: "active", label: "Active" },
-              { value: "expired", label: "Expired" },
-            ]}
-          />
-          <button
-            className="px-3 py-2 bg-[#7CB9E8] text-white hover:bg-white hover:text-[#7CB9E8] border border-[#7CB9E8] font-[500] rounded-md"
-            onClick={() => setIsScannerOpen(true)}
-          >
-            <PlusOutlined /> Add New
-          </button>
-        </div>
-        <Input
-          placeholder="Search by name, barcode, or serial"
-          prefix={<SearchOutlined />}
-          style={{ width: 300, padding: "8px", borderRadius: "20px" }}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+    <div style={{ padding: "16px" }}>
+      <div
+        style={{
+          marginBottom: "16px",
+          display: "flex",
+          gap: "16px",
+          flexWrap: "wrap",
+        }}
+      >
+        <Select
+          placeholder="Warranty"
+          style={{ width: 200, height: 40 }}
+          options={[
+            { value: "active", label: "Active" },
+            { value: "expired", label: "Expired" },
+          ]}
         />
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setIsScannerOpen(true)}
+          style={{ backgroundColor: "#7CB9E8", borderColor: "#7CB9E8" }}
+        >
+          Add New
+        </Button>
       </div>
+
+      <Input
+        placeholder="Search by name, barcode, or serial"
+        prefix={<SearchOutlined />}
+        style={{ marginBottom: "16px", borderRadius: "10px", padding: "9px" }}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
 
       <Row gutter={[16, 16]}>
         {filteredSales.length > 0 ? (
@@ -130,6 +159,7 @@ export default function SalesPage() {
                 ).toLocaleDateString()})`}
                 warrantyEndDate={sale.warrantyEndDate}
                 onReplace={() => handleReplaceClick(sale._id)}
+                isWarrantyActive={new Date(sale.warrantyEndDate) > new Date()}
               />
             </Col>
           ))
@@ -139,6 +169,7 @@ export default function SalesPage() {
           </Col>
         )}
       </Row>
+
       <Bracode
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}

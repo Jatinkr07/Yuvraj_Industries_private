@@ -1,6 +1,5 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
-// Card/SalesCard.jsx
 import { Button } from "antd";
 
 export default function SalesCard({
@@ -13,7 +12,7 @@ export default function SalesCard({
   isWarrantyActive,
 }) {
   return (
-    <div className="max-w-9xl mx-auto p-4 grid lg:grid-cols-2">
+    <div className="max-w-9xl mx-auto p-4 grid lg:grid-cols-1">
       <div className="border-2 border-black rounded-sm">
         <div className="border-b border-gray-300 p-4">
           <h1 className="text-[13px] text-nowrap md:text-xl font-bold text-center">
