@@ -1,5 +1,4 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-
 import { useState, useEffect, useCallback } from "react";
 import { Table, Input, Button, Select, Modal, message, QRCode } from "antd";
 import {
@@ -14,6 +13,7 @@ import {
 import { saveAs } from "file-saver";
 import FormModal from "../components/products/FormModal";
 import ProductTemplate from "./Template/Template.jsx";
+import InnerTemplate from "./Template/InnerTemplate.jsx"; // Updated import name
 import {
   createProduct,
   getProducts,
@@ -27,6 +27,8 @@ const Products = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [isInnerTemplateModalOpen, setIsInnerTemplateModalOpen] =
+    useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -131,6 +133,11 @@ const Products = () => {
     setIsTemplateModalOpen(true);
   };
 
+  const showInnerTemplate = (product) => {
+    setSelectedProduct(product);
+    setIsInnerTemplateModalOpen(true);
+  };
+
   const downloadQRCode = () => {
     if (!selectedProduct) return;
 
@@ -191,6 +198,7 @@ const Products = () => {
       title: "Name",
       dataIndex: "productName",
       key: "productName",
+      width: 150,
     },
     {
       title: "QR Code",
@@ -207,8 +215,22 @@ const Products = () => {
       ),
     },
     {
-      title: "Template",
-      key: "template",
+      title: "Inner Template",
+      key: "innerTemplate",
+      width: 150,
+      render: (_, record) => (
+        <Button
+          type="link"
+          onClick={() => showInnerTemplate(record)}
+          icon={<EyeOutlined />}
+        >
+          View Template
+        </Button>
+      ),
+    },
+    {
+      title: "Outer Template",
+      key: "outerTemplate",
       width: 150,
       render: (_, record) => (
         <Button
@@ -352,6 +374,12 @@ const Products = () => {
           product={selectedProduct}
           visible={isTemplateModalOpen}
           onClose={() => setIsTemplateModalOpen(false)}
+        />
+
+        <InnerTemplate
+          product={selectedProduct}
+          visible={isInnerTemplateModalOpen}
+          onClose={() => setIsInnerTemplateModalOpen(false)}
         />
       </div>
     </div>

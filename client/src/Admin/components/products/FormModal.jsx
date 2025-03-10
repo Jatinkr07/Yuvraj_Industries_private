@@ -11,6 +11,7 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
   const [fileList, setFileList] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
+  const [subSubcategories, setSubSubcategories] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -23,6 +24,7 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
         ...initialValues,
         category: initialValues.category?._id || initialValues.category,
         subcategory: initialValues.subcategory,
+        subSubcategory: initialValues.subSubcategory, // New field for sub-subcategory
         warranty: initialValues.warranty
           ? Math.floor(
               initialValues.warranty /
@@ -48,16 +50,25 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
         setFileList([]);
       }
 
+      // Populate subcategories and sub-subcategories based on initial category
       if (initialValues.category) {
         const selectedCategory = categories.find(
-          (cat) => cat._id === initialValues.category
+          (cat) =>
+            cat._id === (initialValues.category?._id || initialValues.category)
         );
-        setSubcategories(selectedCategory?.subcategories || []);
+        if (selectedCategory) {
+          setSubcategories(selectedCategory.subcategories || []);
+          const selectedSubcategory = selectedCategory.subcategories.find(
+            (sub) => sub.name === initialValues.subcategory
+          );
+          setSubSubcategories(selectedSubcategory?.subSubcategories || []);
+        }
       }
     } else {
       form.resetFields();
       setFileList([]);
       setSubcategories([]);
+      setSubSubcategories([]);
     }
   }, [initialValues, form, categories]);
 
@@ -77,7 +88,19 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
   const handleCategoryChange = (categoryId) => {
     const selectedCategory = categories.find((cat) => cat._id === categoryId);
     setSubcategories(selectedCategory?.subcategories || []);
-    form.setFieldsValue({ subcategory: null });
+    setSubSubcategories([]);
+    form.setFieldsValue({ subcategory: null, subSubcategory: null });
+  };
+
+  const handleSubcategoryChange = (subcategoryName) => {
+    const selectedCategory = categories.find(
+      (cat) => cat._id === form.getFieldValue("category")
+    );
+    const selectedSubcategory = selectedCategory?.subcategories.find(
+      (sub) => sub.name === subcategoryName
+    );
+    setSubSubcategories(selectedSubcategory?.subSubcategories || []);
+    form.setFieldsValue({ subSubcategory: null });
   };
 
   const handleChange = ({ fileList: newFileList }) => {
@@ -148,10 +171,29 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
               placeholder="Select subcategory"
               className="h-12 bg-gray-100"
               disabled={!subcategories.length}
+              onChange={handleSubcategoryChange}
             >
               {subcategories.map((sub) => (
                 <Select.Option key={sub.name} value={sub.name}>
                   {sub.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Select Sub-subcategory"
+            name="subSubcategory"
+            rules={[{ required: true, message: "Sub-subcategory is required" }]}
+          >
+            <Select
+              placeholder="Select sub-subcategory"
+              className="h-12 bg-gray-100"
+              disabled={!subSubcategories.length}
+            >
+              {subSubcategories.map((subSub) => (
+                <Select.Option key={subSub.name} value={subSub.name}>
+                  {subSub.name}
                 </Select.Option>
               ))}
             </Select>
@@ -175,6 +217,7 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
           >
             <Input placeholder="Enter KW/HP" className="h-12 bg-gray-100" />
           </Form.Item>
+
           <Form.Item
             label="Phase"
             name="phase"
@@ -182,6 +225,7 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
           >
             <Input placeholder="Enter Phase" className="h-12 bg-gray-100" />
           </Form.Item>
+
           <Form.Item
             label="Volts"
             name="volts"

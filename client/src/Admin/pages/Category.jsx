@@ -14,6 +14,7 @@ import { getCategories, deleteCategory, API_URL } from "../../Services/api";
 const Category = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [tableData, setTableData] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -22,10 +23,13 @@ const Category = () => {
     setLoading(true);
     try {
       const data = await getCategories();
-      setCategories(Array.isArray(data) ? data : []);
+      const formattedData = Array.isArray(data) ? data : [];
+      setCategories(formattedData);
+      flattenData(formattedData); // Transform data for table
     } catch (error) {
       message.error("Failed to fetch categories");
       setCategories([]);
+      setTableData([]);
     } finally {
       setLoading(false);
     }
@@ -35,9 +39,58 @@ const Category = () => {
     fetchCategories();
   }, []);
 
-  const handleDelete = async (id) => {
+  const flattenData = (categories) => {
+    const flattened = [];
+    categories.forEach((category, catIndex) => {
+      const hasSubcategories =
+        category.subcategories && category.subcategories.length > 0;
+      if (!hasSubcategories) {
+        flattened.push({
+          key: `${category._id}-none-none`,
+          serialNumber: flattened.length + 1,
+          categoryId: category._id,
+          categoryName: category.name,
+          subcategoryName: "None",
+          subSubcategoryName: "None",
+          image: category.image,
+        });
+      } else {
+        category.subcategories.forEach((subcategory) => {
+          const hasSubSubcategories =
+            subcategory.subSubcategories &&
+            subcategory.subSubcategories.length > 0;
+          if (!hasSubSubcategories) {
+            flattened.push({
+              key: `${category._id}-${subcategory.name}-none`,
+              serialNumber: flattened.length + 1,
+              categoryId: category._id,
+              categoryName: category.name,
+              subcategoryName: subcategory.name,
+              subSubcategoryName: "None",
+              image: category.image,
+            });
+          } else {
+            subcategory.subSubcategories.forEach((subSubcategory) => {
+              flattened.push({
+                key: `${category._id}-${subcategory.name}-${subSubcategory.name}`,
+                serialNumber: flattened.length + 1,
+                categoryId: category._id,
+                categoryName: category.name,
+                subcategoryName: subcategory.name,
+                subSubcategoryName: subSubcategory.name,
+                image: category.image,
+              });
+            });
+          }
+        });
+      }
+    });
+    setTableData(flattened);
+  };
+
+  const handleDelete = async (categoryId) => {
     try {
-      await deleteCategory(id);
+      await deleteCategory(categoryId);
       message.success("Category deleted successfully!");
       fetchCategories();
     } catch (error) {
@@ -45,7 +98,8 @@ const Category = () => {
     }
   };
 
-  const handleEdit = (category) => {
+  const handleEdit = (record) => {
+    const category = categories.find((cat) => cat._id === record.categoryId);
     setSelectedCategory(category);
     setIsModalOpen(true);
   };
@@ -58,24 +112,41 @@ const Category = () => {
   const handleSearch = (value) => {
     setSearchText(value);
     if (!value) {
-      fetchCategories(); // Reset to full list if search is cleared
+      flattenData(categories);
     } else {
-      const filtered = categories.filter(
-        (cat) =>
-          cat.name.toLowerCase().includes(value.toLowerCase()) ||
-          cat.subcategories.some((sub) =>
-            sub.name.toLowerCase().includes(value.toLowerCase())
-          )
-      );
-      setCategories(filtered);
+      const filtered = tableData
+        .filter(
+          (row) =>
+            row.categoryName.toLowerCase().includes(value.toLowerCase()) ||
+            row.subcategoryName.toLowerCase().includes(value.toLowerCase()) ||
+            row.subSubcategoryName.toLowerCase().includes(value.toLowerCase())
+        )
+        .map((row, index) => ({ ...row, serialNumber: index + 1 }));
+      setTableData(filtered);
     }
   };
 
   const columns = [
     {
       title: "S. No.",
+      dataIndex: "serialNumber",
       width: 80,
-      render: (_, __, index) => index + 1,
+    },
+    {
+      title: "Category",
+      dataIndex: "categoryName",
+      sorter: (a, b) => a.categoryName.localeCompare(b.categoryName),
+    },
+    {
+      title: "Subcategory",
+      dataIndex: "subcategoryName",
+      sorter: (a, b) => a.subcategoryName.localeCompare(b.subcategoryName),
+    },
+    {
+      title: "Sub-subcategory",
+      dataIndex: "subSubcategoryName",
+      sorter: (a, b) =>
+        a.subSubcategoryName.localeCompare(b.subSubcategoryName),
     },
     {
       title: "Image",
@@ -93,17 +164,6 @@ const Category = () => {
         ),
     },
     {
-      title: "Name",
-      dataIndex: "name",
-    },
-    {
-      title: "Products",
-      width: 100,
-      render: () => (
-        <EyeOutlined className="text-blue-600 text-lg cursor-pointer" />
-      ),
-    },
-    {
       title: "Action",
       width: 150,
       render: (_, record) => (
@@ -114,32 +174,12 @@ const Category = () => {
           />
           <DeleteOutlined
             className="text-red-500 text-lg cursor-pointer"
-            onClick={() => handleDelete(record._id)}
+            onClick={() => handleDelete(record.categoryId)}
           />
         </div>
       ),
     },
   ];
-
-  const expandedRowRender = (record) => {
-    const subColumns = [
-      {
-        title: "Subcategory Name",
-        dataIndex: "name",
-        key: "name",
-      },
-    ];
-
-    return (
-      <Table
-        columns={subColumns}
-        dataSource={record.subcategories || []}
-        pagination={false}
-        rowKey="name"
-        scroll={{ y: 300 }} // Vertical scroll for subcategories
-      />
-    );
-  };
 
   return (
     <div className="bg-gray-50 min-h-screen p-6">
@@ -187,16 +227,11 @@ const Category = () => {
 
         <Table
           columns={columns}
-          dataSource={categories}
+          dataSource={tableData}
           loading={loading}
-          rowKey="_id"
+          rowKey="key"
           pagination={{ pageSize: 10 }}
-          scroll={{ x: 1000, y: 500 }} // Vertical scroll for main table
-          expandable={{
-            expandedRowRender,
-            rowExpandable: (record) =>
-              record.subcategories && record.subcategories.length > 0,
-          }}
+          scroll={{ x: 1200, y: 500 }}
         />
       </div>
 

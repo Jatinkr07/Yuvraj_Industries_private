@@ -10,6 +10,7 @@ const productSchema = new mongoose.Schema(
       required: true,
     },
     subcategory: { type: String, required: true },
+    subSubcategory: { type: String, required: true },
     power: { type: String, required: true, trim: true },
     volts: { type: String, required: true, trim: true },
     phase: { type: String, required: true, trim: true },

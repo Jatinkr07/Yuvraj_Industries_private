@@ -22,6 +22,9 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
   const [imageDeleted, setImageDeleted] = useState(false);
   const [subcategories, setSubcategories] = useState([]);
   const [subcategoryName, setSubcategoryName] = useState("");
+  const [subSubcategoryName, setSubSubcategoryName] = useState("");
+  const [selectedSubcategoryIndex, setSelectedSubcategoryIndex] =
+    useState(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -35,6 +38,10 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
             { uid: "-1", name: "image", status: "done", url: imageUrl },
           ]);
           setImageDeleted(false);
+        } else {
+          setFileList([]);
+          setPreviewUrl(null);
+          setImageDeleted(false);
         }
       } else {
         form.resetFields();
@@ -43,6 +50,9 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
         setImageDeleted(false);
         setSubcategories([]);
       }
+      setSubcategoryName("");
+      setSubSubcategoryName("");
+      setSelectedSubcategoryIndex(null);
     }
   }, [isOpen, initialData, form]);
 
@@ -84,23 +94,48 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
       message.error("Subcategory name is required");
       return;
     }
-    const newSubcategory = { name: subcategoryName };
+    const newSubcategory = { name: subcategoryName, subSubcategories: [] };
     setSubcategories([...subcategories, newSubcategory]);
     setSubcategoryName("");
   };
 
+  const addSubSubcategory = () => {
+    if (!subSubcategoryName.trim()) {
+      message.error("Sub-subcategory name is required");
+      return;
+    }
+    if (selectedSubcategoryIndex === null) {
+      message.error("Please select a subcategory first");
+      return;
+    }
+    const updatedSubcategories = [...subcategories];
+    updatedSubcategories[selectedSubcategoryIndex].subSubcategories.push({
+      name: subSubcategoryName,
+    });
+    setSubcategories(updatedSubcategories);
+    setSubSubcategoryName("");
+  };
+
   const removeSubcategory = (index) => {
     const updatedSubcategories = subcategories.filter((_, i) => i !== index);
+    setSubcategories(updatedSubcategories);
+    if (selectedSubcategoryIndex === index) {
+      setSelectedSubcategoryIndex(null);
+    }
+  };
+
+  const removeSubSubcategory = (subIndex, subSubIndex) => {
+    const updatedSubcategories = [...subcategories];
+    updatedSubcategories[subIndex].subSubcategories = updatedSubcategories[
+      subIndex
+    ].subSubcategories.filter((_, i) => i !== subSubIndex);
     setSubcategories(updatedSubcategories);
   };
 
   const handleSubmit = async (values) => {
     const formData = new FormData();
     formData.append("name", values.category);
-    formData.append(
-      "subcategories",
-      JSON.stringify(subcategories.map((sub) => ({ name: sub.name })))
-    );
+    formData.append("subcategories", JSON.stringify(subcategories));
 
     if (fileList.length > 0 && fileList[0].originFileObj) {
       formData.append("image", fileList[0].originFileObj);
@@ -121,6 +156,9 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
       setPreviewUrl(null);
       setImageDeleted(false);
       setSubcategories([]);
+      setSubcategoryName("");
+      setSubSubcategoryName("");
+      setSelectedSubcategoryIndex(null);
       onClose();
       refreshData();
     } catch (error) {
@@ -135,7 +173,7 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
       onCancel={onClose}
       footer={null}
       centered
-      width={600}
+      width={800}
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
         <Form.Item
@@ -143,10 +181,13 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
           name="category"
           rules={[{ required: true, message: "Category name is required" }]}
         >
-          <Input placeholder="Enter Name" className="h-12 bg-gray-100" />
+          <Input
+            placeholder="Enter Category Name"
+            className="h-12 bg-gray-100"
+          />
         </Form.Item>
 
-        <Form.Item label="Image">
+        <Form.Item label="Image (Optional)">
           <Upload
             accept="image/*"
             showUploadList={false}
@@ -198,23 +239,79 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
           </Space>
           <List
             dataSource={subcategories}
-            renderItem={(item, index) => (
+            renderItem={(subcategory, subIndex) => (
               <List.Item
                 actions={[
                   <Button
                     type="link"
                     danger
                     icon={<DeleteOutlined />}
-                    onClick={() => removeSubcategory(index)}
+                    onClick={() => removeSubcategory(subIndex)}
                   />,
+                  <Button
+                    type="link"
+                    onClick={() => setSelectedSubcategoryIndex(subIndex)}
+                  >
+                    Add Sub-subcategory
+                  </Button>,
                 ]}
               >
-                {item.name}
+                {subcategory.name}
               </List.Item>
             )}
             className="mt-2"
           />
         </div>
+
+        {selectedSubcategoryIndex !== null && (
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold">
+              Sub-subcategories for{" "}
+              {subcategories[selectedSubcategoryIndex].name}
+            </h3>
+            <Space direction="vertical" className="w-full">
+              <Input
+                placeholder="Enter Sub-subcategory Name"
+                value={subSubcategoryName}
+                onChange={(e) => setSubSubcategoryName(e.target.value)}
+                className="h-12 bg-gray-100"
+              />
+              <Button
+                type="dashed"
+                onClick={addSubSubcategory}
+                icon={<PlusOutlined />}
+                className="w-full h-12"
+              >
+                Add Sub-subcategory
+              </Button>
+            </Space>
+            <List
+              dataSource={
+                subcategories[selectedSubcategoryIndex].subSubcategories
+              }
+              renderItem={(subSubcategory, subSubIndex) => (
+                <List.Item
+                  actions={[
+                    <Button
+                      type="link"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() =>
+                        removeSubSubcategory(
+                          selectedSubcategoryIndex,
+                          subSubIndex
+                        )
+                      }
+                    />,
+                  ]}
+                >
+                  {subSubcategory.name}
+                </List.Item>
+              )}
+              className="mt-2"
+            />
+          </div>
+        )}
 
         <div className="flex justify-start mt-10 gap-4">
           <Button

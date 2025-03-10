@@ -43,7 +43,7 @@ export const createCategory = async (req, res) => {
     try {
       const newCategory = new Category({
         name: categoryData.name,
-        image: imagePath,
+        image: imagePath || "",
         subcategories: categoryData.subcategories,
       });
       await newCategory.save();
@@ -94,7 +94,9 @@ export const updateCategory = async (req, res) => {
         updateFields.image = newImagePath;
       } else if (updatedData.image === "") {
         if (category.image) removeImage(category.image);
-        updateFields.image = null;
+        updateFields.image = "";
+      } else {
+        updateFields.image = category.image;
       }
 
       const updatedCategory = await Category.findByIdAndUpdate(
