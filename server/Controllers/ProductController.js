@@ -204,13 +204,17 @@ function calculateWarrantyDays(warranty, unit) {
 
 export const assignProductToDealer = async (req, res) => {
   try {
-    const { code } = req.body;
-    const dealerId = req.dealerId;
+    const { code, dealerId } = req.body;
+    const adminId = req.adminId; // Assuming admin middleware sets this
 
     if (!code) {
       return res
         .status(400)
         .json({ message: "No barcode or serial number provided" });
+    }
+
+    if (!dealerId) {
+      return res.status(400).json({ message: "No dealer selected" });
     }
 
     const product = await Product.findOne({
@@ -231,17 +235,54 @@ export const assignProductToDealer = async (req, res) => {
     product.assignedTo = dealerId;
     product.isAssigned = true;
     product.assignedAt = new Date();
+    product.assignedBy = adminId;
     await product.save();
 
     res.status(200).json({ message: "Product assigned to dealer", product });
   } catch (error) {
-    console.error(
-      "[Backend] Error assigning product to dealer:",
-      error.message
-    );
     res
       .status(500)
       .json({ message: "Failed to assign product", error: error.message });
+  }
+};
+
+// New bulk assign function
+export const bulkAssignProductsToDealer = async (req, res) => {
+  try {
+    const { productIds, dealerId } = req.body;
+    const adminId = req.adminId;
+
+    if (!dealerId || !productIds?.length) {
+      return res
+        .status(400)
+        .json({ message: "Dealer ID and product IDs are required" });
+    }
+
+    const products = await Product.updateMany(
+      {
+        _id: { $in: productIds },
+        assignedTo: null,
+        isAssigned: false,
+        assignedToSubDealer: null,
+        isAssignedToSubDealer: false,
+        isReplaced: false,
+      },
+      {
+        assignedTo: dealerId,
+        isAssigned: true,
+        assignedAt: new Date(),
+        assignedBy: adminId,
+      }
+    );
+
+    res.status(200).json({
+      message: `Successfully assigned ${products.modifiedCount} products to dealer`,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to bulk assign products",
+      error: error.message,
+    });
   }
 };
 

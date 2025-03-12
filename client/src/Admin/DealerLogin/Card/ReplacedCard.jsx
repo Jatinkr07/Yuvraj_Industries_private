@@ -7,7 +7,7 @@ export default function ReplacedCard({
   warrantyPeriod,
 }) {
   return (
-    <div className="max-w-9xl grid grid-cols-1 mx-auto p-4">
+    <div className="max-w-9xl grid grid-cols-1 mx-auto lg:p-4">
       <div className="border-2 border-gray-800">
         {/* Header */}
         <div className="border-b border-gray-300 p-4">

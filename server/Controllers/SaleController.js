@@ -279,13 +279,6 @@ export const replaceProduct = async (req, res) => {
     const { code } = req.body;
     const subDealerId = req.subDealerId;
 
-    console.log(
-      "Replacing Product (Sub-Dealer) - Sale ID:",
-      saleId,
-      "Code:",
-      code
-    );
-
     if (!code) {
       return res.status(400).json({
         message: "No barcode or serial number provided for replacement",
@@ -300,41 +293,38 @@ export const replaceProduct = async (req, res) => {
     }
 
     const now = new Date();
-    if (new Date(sale.warrantyEndDate) < now) {
+    if (new Date(sale.warrantyEndDate) <= now) {
       return res.status(400).json({ message: "Warranty has expired" });
     }
 
-    // Calculate remaining warranty
     const remainingWarrantyStart = sale.warrantyStartDate;
     const remainingWarrantyEnd = sale.warrantyEndDate;
 
-    // Find the new product: Must be assigned to the same sub-dealer
     let newProduct = await Product.findOne({
       $or: [{ barcode: code }, { serialNumber: code }],
       assignedToSubDealer: subDealerId,
       isAssignedToSubDealer: true,
+      isReplaced: false,
     });
-
-    console.log("New Product Found (Sub-Dealer):", newProduct || "None");
 
     if (!newProduct) {
       return res.status(404).json({
-        message:
-          "Replacement product not found or not assigned to you as a sub-dealer",
+        message: "Replacement product not found or not assigned to you",
       });
     }
 
-    // Create replacement record for the original product
+    // Create replacement record
     const replacement = new Replacement({
       originalProductId: sale.productId._id,
       newProductId: newProduct._id,
       subDealerId,
       warrantyStartDate: remainingWarrantyStart,
       warrantyEndDate: remainingWarrantyEnd,
+      replacedDate: new Date(),
     });
     await replacement.save();
 
-    // Create a new sale for the replacement product with the remaining warranty
+    // Create new sale for the replacement product
     const newSale = new Sale({
       productId: newProduct._id,
       subDealerId,
@@ -345,16 +335,16 @@ export const replaceProduct = async (req, res) => {
     });
     await newSale.save();
 
-    // Update the new product: Ensure it remains assigned to the sub-dealer
+    // Update the new product: Mark it as sold, not assigned
     await Product.findByIdAndUpdate(newProduct._id, {
-      assignedToSubDealer: subDealerId,
-      isAssignedToSubDealer: true,
-      assignedToSubDealerAt: new Date(),
+      assignedToSubDealer: null,
+      isAssignedToSubDealer: false,
+      assignedToSubDealerAt: null,
       warrantyStartDate: remainingWarrantyStart,
       warrantyEndDate: remainingWarrantyEnd,
     });
 
-    // Update the original product: Move to replaced state
+    // Update the original product: Mark it as replaced
     await Product.findByIdAndUpdate(sale.productId._id, {
       assignedToSubDealer: null,
       isAssignedToSubDealer: false,
@@ -367,17 +357,18 @@ export const replaceProduct = async (req, res) => {
     // Delete the original sale
     await Sale.findByIdAndDelete(saleId);
 
-    console.log("Sub-Dealer Replacement Created:", replacement);
+    // Populate the new sale for the response
+    const populatedNewSale = await Sale.findById(newSale._id).populate(
+      "productId",
+      "productName barcode serialNumber warranty warrantyUnit"
+    );
+
     res.status(200).json({
-      message:
-        "Product replaced and new sale created for sub-dealer with remaining warranty",
-      replacement,
+      message: "Product replaced successfully with remaining warranty",
+      sale: populatedNewSale,
     });
   } catch (error) {
-    console.error(
-      "[Backend] Error replacing sub-dealer product:",
-      error.message
-    );
+    console.error("Error replacing product:", error.message);
     res
       .status(500)
       .json({ message: "Failed to replace product", error: error.message });

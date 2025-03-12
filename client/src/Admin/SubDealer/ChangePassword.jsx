@@ -1,4 +1,4 @@
-import { Form, Input, Button } from "antd";
+import { Form, Input } from "antd";
 
 export default function ChangePassword() {
   const onFinish = (values) => {

@@ -86,6 +86,17 @@ export const assignProductToDealer = async (data) => {
   return response.data;
 };
 
+export const bulkAssignProductsToDealer = async (data) => {
+  const response = await api.post("/api/products/bulk-assign-to-dealer", data);
+  return response.data;
+};
+
+export const getDealersAll = async () => {
+  const response = await api.get("/api/dealer/v1/list/dealer");
+  console.log("getDealers response:", response.data);
+  return response.data;
+};
+
 export const getDealerProducts = async (dealerId) => {
   const response = await api.get(
     dealerId ? `/api/dealer/products/${dealerId}` : "/api/dealer/products"

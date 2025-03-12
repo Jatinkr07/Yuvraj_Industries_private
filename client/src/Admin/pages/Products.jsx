@@ -11,25 +11,87 @@ import {
   EyeOutlined,
 } from "@ant-design/icons";
 import { saveAs } from "file-saver";
+import { toPng } from "html-to-image";
 import FormModal from "../components/products/FormModal";
 import ProductTemplate from "./Template/Template.jsx";
-import InnerTemplate from "./Template/InnerTemplate.jsx"; // Updated import name
+import InnerTemplate from "./Template/InnerTemplate.jsx";
 import {
   createProduct,
   getProducts,
   updateProduct,
   deleteProduct,
+  assignProductToDealer,
+  bulkAssignProductsToDealer,
+  getDealersAll,
 } from "../../Services/api.js";
+
+// Utility function to generate and download templates
+const generateAndDownloadTemplate = async (
+  products,
+  TemplateComponent,
+  type
+) => {
+  const offscreenContainer = document.createElement("div");
+  offscreenContainer.style.position = "absolute";
+  offscreenContainer.style.left = "-9999px";
+  document.body.appendChild(offscreenContainer);
+
+  try {
+    for (const product of products) {
+      // Create a temporary container for each product
+      const tempContainer = document.createElement("div");
+      offscreenContainer.appendChild(tempContainer);
+
+      // Render the template component off-screen
+      const template = (
+        <TemplateComponent
+          product={product}
+          visible={true}
+          onClose={() => {}}
+        />
+      );
+      // Here we assume ReactDOM.render could be used, but since we're in a functional context,
+      // we'll simulate the rendering by manipulating DOM directly
+      tempContainer.innerHTML = `<div class="${
+        type === "outer" ? "product-template-card" : "inner-template-card"
+      }">${template.props.children.props.children}</div>`;
+
+      const element = tempContainer.querySelector(
+        `.${type === "outer" ? "product-template-card" : "inner-template-card"}`
+      );
+      if (!element) {
+        console.error(
+          "Template element not found for product:",
+          product.serialNumber
+        );
+        continue;
+      }
+
+      const dataUrl = await toPng(element, { cacheBust: true });
+      saveAs(dataUrl, `${type}-template-${product.serialNumber}.png`);
+
+      // Cleanup
+      offscreenContainer.removeChild(tempContainer);
+    }
+  } catch (error) {
+    console.error(`Error generating ${type} templates:`, error);
+    message.error(`Failed to generate ${type} templates`);
+  } finally {
+    document.body.removeChild(offscreenContainer);
+  }
+};
 
 const Products = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [products, setProducts] = useState([]);
+  const [dealers, setDealers] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isInnerTemplateModalOpen, setIsInnerTemplateModalOpen] =
     useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -48,7 +110,7 @@ const Products = () => {
           limit: pageSize,
           search: searchText,
         });
-        setProducts(data.products);
+        setProducts(data.products || []);
         setPagination((prev) => ({
           ...prev,
           current: data.page,
@@ -57,6 +119,7 @@ const Products = () => {
       } catch (error) {
         console.error("Error fetching products:", error);
         message.error("Failed to fetch products");
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -64,9 +127,22 @@ const Products = () => {
     [searchText, pagination.current, pagination.pageSize]
   );
 
+  const fetchDealers = useCallback(async () => {
+    try {
+      const dealerData = await getDealersAll();
+      console.log("Raw dealer data:", dealerData); // Debug
+      setDealers(Array.isArray(dealerData) ? dealerData : []);
+    } catch (error) {
+      console.error("Error fetching dealers:", error.message);
+      message.error("Failed to fetch dealers: " + error.message);
+      setDealers([]);
+    }
+  }, []);
+
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+    fetchDealers();
+  }, [fetchProducts, fetchDealers]);
 
   const handleCreate = async (values) => {
     try {
@@ -123,6 +199,40 @@ const Products = () => {
     });
   };
 
+  const handleAssignDealer = async (productId, dealerId) => {
+    try {
+      const product = products.find((p) => p._id === productId);
+      await assignProductToDealer({
+        code: product.serialNumber,
+        dealerId: dealerId || null,
+      });
+      message.success(
+        dealerId ? "Product assigned successfully" : "Dealer assignment removed"
+      );
+      fetchProducts();
+    } catch (error) {
+      message.error("Failed to assign product to dealer");
+      console.error("Error assigning dealer:", error);
+    }
+  };
+
+  const handleBulkAssign = async (dealerId) => {
+    try {
+      await bulkAssignProductsToDealer({
+        productIds: selectedRowKeys,
+        dealerId,
+      });
+      message.success(
+        `Successfully assigned ${selectedRowKeys.length} products to dealer`
+      );
+      setSelectedRowKeys([]);
+      fetchProducts();
+    } catch (error) {
+      message.error("Failed to bulk assign products");
+      console.error("Error bulk assigning:", error);
+    }
+  };
+
   const showQRCode = (product) => {
     setSelectedProduct(product);
     setIsQRModalOpen(true);
@@ -138,35 +248,65 @@ const Products = () => {
     setIsInnerTemplateModalOpen(true);
   };
 
-  const downloadQRCode = () => {
-    if (!selectedProduct) return;
-
-    const qrCanvas = document.querySelector(".ant-qrcode canvas");
-    if (!qrCanvas) {
-      message.error("QR Code not found!");
-      return;
-    }
+  const downloadQRCode = (product = selectedProduct) => {
+    if (!product) return;
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-    const qrWidth = qrCanvas.width;
-    const qrHeight = qrCanvas.height;
-    const textHeight = 30;
-    canvas.width = qrWidth;
-    canvas.height = qrHeight + textHeight;
+    const size = 150;
+    canvas.width = size;
+    canvas.height = size + 30;
 
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(qrCanvas, 0, 0);
 
+    const qrCanvas = document.createElement("canvas");
+    new QRCode(qrCanvas, {
+      text: product.barcode || product.serialNumber,
+      width: size,
+      height: size,
+    });
+
+    ctx.drawImage(qrCanvas, 0, 0);
     ctx.fillStyle = "#000";
     ctx.font = "16px Arial";
     ctx.textAlign = "center";
-    ctx.fillText(selectedProduct.serialNumber, qrWidth / 2, qrHeight + 20);
+    ctx.fillText(product.serialNumber, size / 2, size + 20);
 
     canvas.toBlob((blob) => {
-      saveAs(blob, `qrcode-${selectedProduct.serialNumber}.png`);
+      saveAs(blob, `qrcode-${product.serialNumber}.png`);
     });
+  };
+
+  const handleBulkDownloadQR = () => {
+    const selectedProducts = products.filter((p) =>
+      selectedRowKeys.includes(p._id)
+    );
+    selectedProducts.forEach((product) => downloadQRCode(product));
+  };
+
+  const handleBulkInnerTemplate = () => {
+    const selectedProducts = products.filter((p) =>
+      selectedRowKeys.includes(p._id)
+    );
+    if (selectedProducts.length === 1) {
+      setSelectedProduct(selectedProducts[0]);
+      setIsInnerTemplateModalOpen(true);
+    } else {
+      generateAndDownloadTemplate(selectedProducts, InnerTemplate, "inner");
+    }
+  };
+
+  const handleBulkOuterTemplate = () => {
+    const selectedProducts = products.filter((p) =>
+      selectedRowKeys.includes(p._id)
+    );
+    if (selectedProducts.length === 1) {
+      setSelectedProduct(selectedProducts[0]);
+      setIsTemplateModalOpen(true);
+    } else {
+      generateAndDownloadTemplate(selectedProducts, ProductTemplate, "outer");
+    }
   };
 
   const handleSearch = useCallback((value) => {
@@ -255,6 +395,27 @@ const Products = () => {
       width: 120,
     },
     {
+      title: "Dealer",
+      key: "dealer",
+      width: 200,
+      render: (_, record) => (
+        <Select
+          style={{ width: 180 }}
+          placeholder="Assign Dealer"
+          value={record.assignedTo?._id || record.assignedTo}
+          onChange={(value) => handleAssignDealer(record._id, value)}
+          allowClear
+          loading={!dealers.length}
+        >
+          {dealers.map((dealer) => (
+            <Select.Option key={dealer._id} value={dealer._id}>
+              {`${dealer.firstName} ${dealer.lastName}`}
+            </Select.Option>
+          ))}
+        </Select>
+      ),
+    },
+    {
       title: "Added On",
       dataIndex: "createdAt",
       key: "addedOn",
@@ -280,22 +441,64 @@ const Products = () => {
     },
   ];
 
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys),
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold">Product List</h1>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingProduct(null);
-              setIsModalOpen(true);
-            }}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Add New
-          </Button>
+          <div className="flex gap-2">
+            {selectedRowKeys.length > 0 && (
+              <>
+                <Select
+                  placeholder="Bulk Assign Dealer"
+                  style={{ width: 200 }}
+                  onChange={handleBulkAssign}
+                  allowClear
+                  loading={!dealers.length}
+                >
+                  {dealers.map((dealer) => (
+                    <Select.Option key={dealer._id} value={dealer._id}>
+                      {`${dealer.firstName} ${dealer.lastName}`}
+                    </Select.Option>
+                  ))}
+                </Select>
+                <Button
+                  icon={<DownloadOutlined />}
+                  onClick={handleBulkDownloadQR}
+                >
+                  Download QR Codes
+                </Button>
+                <Button
+                  icon={<DownloadOutlined />}
+                  onClick={handleBulkInnerTemplate}
+                >
+                  Inner Templates
+                </Button>
+                <Button
+                  icon={<DownloadOutlined />}
+                  onClick={handleBulkOuterTemplate}
+                >
+                  Outer Templates
+                </Button>
+              </>
+            )}
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setEditingProduct(null);
+                setIsModalOpen(true);
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Add New
+            </Button>
+          </div>
         </div>
 
         <div className="flex gap-4 mb-6">
@@ -322,11 +525,12 @@ const Products = () => {
         </div>
 
         <Table
+          rowSelection={rowSelection}
           columns={columns}
           dataSource={products}
           pagination={pagination}
           onChange={handleTableChange}
-          scroll={{ x: 1200, y: 500 }}
+          scroll={{ x: 1400, y: 500 }}
           loading={loading}
           rowKey="_id"
         />
@@ -350,7 +554,7 @@ const Products = () => {
               key="download"
               type="primary"
               icon={<DownloadOutlined />}
-              onClick={downloadQRCode}
+              onClick={() => downloadQRCode()}
             >
               Download
             </Button>,

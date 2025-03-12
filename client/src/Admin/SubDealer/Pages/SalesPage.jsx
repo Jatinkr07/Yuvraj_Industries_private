@@ -6,7 +6,7 @@ import Bracode from "./BarCode/Barcode";
 import axios from "axios";
 import { API_URL } from "../../../Services/api";
 
-export default function DealerSalesPage() {
+export default function SubDealerSalesPage() {
   const [sales, setSales] = useState([]);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isReplaceScannerOpen, setIsReplaceScannerOpen] = useState(false);
@@ -19,34 +19,31 @@ export default function DealerSalesPage() {
 
   const fetchSales = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/sale/v1/dealer/sales`, {
+      const response = await axios.get(`${API_URL}/api/sale/v1/sale/list`, {
         withCredentials: true,
       });
       setSales(response.data.sales || []);
     } catch (error) {
-      console.error("Error fetching dealer sales:", error);
+      console.error("Error fetching sub-dealer sales:", error);
       message.error("Failed to fetch sales");
     }
   };
 
   const fetchReplacements = async () => {
     try {
-      const response = await axios.get(
-        `${API_URL}/api/sale/v1/dealer/replacements`,
-        {
-          withCredentials: true,
-        }
-      );
-      console.log("Dealer Replacements updated:", response.data.replacements);
+      const response = await axios.get(`${API_URL}/api/sale/v1/replacements`, {
+        withCredentials: true,
+      });
+      console.log("Replacements updated:", response.data.replacements);
     } catch (error) {
-      console.error("Error fetching dealer replacements:", error);
+      console.error("Error fetching replacements:", error);
     }
   };
 
   const handleScanSuccess = async (code) => {
     try {
       const response = await axios.post(
-        `${API_URL}/api/sale/v1/dealer/create`,
+        `${API_URL}/api/sale/v1/create`,
         { code },
         { withCredentials: true }
       );
@@ -61,17 +58,24 @@ export default function DealerSalesPage() {
   const handleReplaceScanSuccess = async (code) => {
     try {
       const response = await axios.put(
-        `${API_URL}/api/sale/v1/dealer/replace/${selectedSaleId}`,
+        `${API_URL}/api/sale/v1/replace/${selectedSaleId}`,
         { code },
         { withCredentials: true }
       );
-      setSales((prev) => prev.filter((sale) => sale._id !== selectedSaleId));
+      const newSale = response.data.sale;
+
+      // Update sales: remove original, add new sale
+      setSales((prev) => {
+        const updatedSales = prev.filter((sale) => sale._id !== selectedSaleId);
+        return [newSale, ...updatedSales];
+      });
+
       message.success("Product replaced successfully");
       setIsReplaceScannerOpen(false);
       setSelectedSaleId(null);
-      fetchReplacements();
+      fetchReplacements(); // Updates the replaced list
     } catch (error) {
-      console.error("Dealer Replace Error:", error.response?.data);
+      console.error("Replace Error:", error.response?.data);
       message.error(
         error.response?.data?.message || "Failed to replace product"
       );
@@ -82,16 +86,8 @@ export default function DealerSalesPage() {
     const sale = sales.find((s) => s._id === saleId);
     if (sale) {
       const isWarrantyActive = new Date(sale.warrantyEndDate) > new Date();
-      console.log(
-        "Sale ID:",
-        saleId,
-        "Warranty End Date:",
-        sale.warrantyEndDate,
-        "Is Active:",
-        isWarrantyActive
-      ); // Debug log
-      if (isWarrantyActive) {
-        message.warning("Cannot replace product while warranty is active.");
+      if (!isWarrantyActive) {
+        message.warning("Cannot replace product; warranty has expired.");
         return;
       }
       setSelectedSaleId(saleId);

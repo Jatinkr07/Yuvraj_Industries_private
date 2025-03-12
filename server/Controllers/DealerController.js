@@ -197,3 +197,16 @@ export const updateDealerPasswordByAdmin = async (req, res) => {
       .json({ message: "Error updating password", error: error.message });
   }
 };
+
+export const getDealersAll = async (req, res) => {
+  try {
+    const dealers = await mongoose
+      .model("Dealer")
+      .find({}, "username firstName lastName");
+    res.status(200).json(dealers);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Failed to fetch dealers", error: error.message });
+  }
+};

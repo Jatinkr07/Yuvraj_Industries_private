@@ -55,7 +55,7 @@ const InnerTemplate = ({ product, visible, onClose }) => {
           className="w-full max-w-7xl bg-gray-50 border border-gray-300 container mx-auto"
           bodyStyle={{ padding: "24px" }}
         >
-          <div className="flex justify-between items-center mb-4 border-b border-gray-300 pb-4">
+          <div className="flex justify-between items-center mb-4 border-b border-gray-300 p-4">
             <Title
               level={3}
               className="text-start w-full uppercase font-bold text-xl"

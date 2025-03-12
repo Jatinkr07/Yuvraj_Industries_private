@@ -9,12 +9,9 @@ export default function SalesCard({
   date,
   warrantyPeriod,
   warrantyEndDate,
-  warranty,
-  warrantyUnit,
   onReplace,
+  isWarrantyActive,
 }) {
-  const isWarrantyExpired = new Date(warrantyEndDate) < new Date();
-
   return (
     <div className="max-w-9xl mx-auto p-4 grid lg:grid-cols-1">
       <div className="border-2 border-black rounded-sm">
@@ -58,7 +55,7 @@ export default function SalesCard({
             type="primary"
             size="large"
             className="bg-[#4338CA] hover:bg-[#3730A3] border-none rounded-md px-8"
-            disabled={isWarrantyExpired}
+            disabled={!isWarrantyActive}
             onClick={onReplace}
           >
             Replace

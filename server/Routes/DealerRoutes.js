@@ -35,6 +35,7 @@ router.get("/products", isDealerAuthenticated, getDealerProducts);
 router.get("/products/:dealerId", isAuthenticated, getDealerProducts);
 router.post("/password/request", requestPasswordChange);
 router.put("/password/:id", updateDealerPasswordByAdmin);
+router.get("/v1/list/dealer", isAuthenticated, getDealers);
 
 //Sub-Dealer
 router.post("/subdealer/create", isDealerAuthenticated, createSubDealer);

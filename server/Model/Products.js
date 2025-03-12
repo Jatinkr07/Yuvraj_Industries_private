@@ -40,6 +40,11 @@ const productSchema = new mongoose.Schema(
     },
     isAssigned: { type: Boolean, default: false },
     assignedAt: { type: Date },
+    assignedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+      default: null,
+    },
     assignedToSubDealer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "SubDealer",
