@@ -4,13 +4,11 @@ import Product from "../Model/Products.js";
 
 export const createDealer = async (req, res) => {
   try {
-    const { firstName, lastName, phoneNumber, email, username, password } =
-      req.body;
+    const { firstName, lastName, phoneNumber, username, password } = req.body;
     const dealer = new Dealer({
       firstName,
       lastName,
       phoneNumber,
-      email,
       username,
       password,
       createdBy: req.adminId,
@@ -31,13 +29,22 @@ export const dealerLogin = async (req, res) => {
       $or: [{ username: identifier }, { phoneNumber: identifier }],
     });
 
-    if (!dealer || !(await dealer.comparePassword(password))) {
+    if (!dealer) {
+      console.log("Dealer not found for identifier:", identifier);
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    if (!process.env.JWT_SECRET) {
-      console.error("JWT_SECRET is not defined in environment variables");
-      return res.status(500).json({ message: "Server configuration error" });
+    if (dealer.passwordChangeRequest.status === "pending") {
+      console.log("Login blocked - pending password change for:", identifier);
+      return res
+        .status(403)
+        .json({ message: "Password change request pending. Contact admin." });
+    }
+
+    const isMatch = await dealer.comparePassword(password);
+    if (!isMatch) {
+      console.log("Password mismatch for:", identifier);
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const token = jwt.sign(
@@ -52,7 +59,6 @@ export const dealerLogin = async (req, res) => {
       sameSite: "lax",
       maxAge: 3600000,
     });
-    // console.log("Login --> token -->", token);
     res.status(200).json({
       message: "Login successful",
       dealerId: dealer._id,
@@ -97,18 +103,29 @@ export const getDealerProducts = async (req, res) => {
 export const updateDealer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { firstName, lastName, phoneNumber, email } = req.body;
+    const {
+      firstName,
+      lastName,
+      phoneNumber,
+      username,
+      password,
+      passwordChangeRequest,
+    } = req.body;
 
-    const dealer = await Dealer.findByIdAndUpdate(
-      id,
-      { firstName, lastName, phoneNumber, email },
-      { new: true, runValidators: true }
-    );
-
+    const dealer = await Dealer.findById(id);
     if (!dealer) {
       return res.status(404).json({ message: "Dealer not found" });
     }
 
+    dealer.firstName = firstName || dealer.firstName;
+    dealer.lastName = lastName || dealer.lastName;
+    dealer.phoneNumber = phoneNumber || dealer.phoneNumber;
+    dealer.username = username || dealer.username;
+    if (password) dealer.password = password;
+    if (passwordChangeRequest)
+      dealer.passwordChangeRequest = passwordChangeRequest;
+
+    await dealer.save();
     res.status(200).json({ message: "Dealer updated successfully", dealer });
   } catch (error) {
     res
@@ -116,7 +133,6 @@ export const updateDealer = async (req, res) => {
       .json({ message: "Error updating dealer", error: error.message });
   }
 };
-
 export const deleteDealer = async (req, res) => {
   try {
     const { id } = req.params;
@@ -129,5 +145,55 @@ export const deleteDealer = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error deleting dealer", error: error.message });
+  }
+};
+
+export const requestPasswordChange = async (req, res) => {
+  try {
+    const { username, phoneNumber } = req.body;
+    const dealer = await Dealer.findOne({
+      username,
+      phoneNumber,
+    });
+
+    if (!dealer) {
+      return res.status(404).json({ message: "Dealer not found" });
+    }
+
+    await Dealer.findByIdAndUpdate(dealer._id, {
+      passwordChangeRequest: {
+        status: "pending",
+        requestedAt: new Date(),
+      },
+    });
+
+    res.status(200).json({ message: "Password change request submitted" });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error requesting password change",
+      error: error.message,
+    });
+  }
+};
+
+export const updateDealerPasswordByAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    const dealer = await Dealer.findById(id);
+    if (!dealer) {
+      return res.status(404).json({ message: "Dealer not found" });
+    }
+
+    dealer.password = newPassword;
+    dealer.passwordChangeRequest = { status: "approved", requestedAt: null };
+    await dealer.save();
+
+    res.status(200).json({ message: "Password updated successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error updating password", error: error.message });
   }
 };

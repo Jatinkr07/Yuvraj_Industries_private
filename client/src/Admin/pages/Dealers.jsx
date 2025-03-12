@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useEffect, useState } from "react";
-import { Table, Input, Button, Select } from "antd";
+import { Table, Input, Button, Select, Modal } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
@@ -8,6 +8,7 @@ import {
   SearchOutlined,
   EyeOutlined,
   ArrowLeftOutlined,
+  LockOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import FormModalSub from "./SubDealerData/FormModalSub";
@@ -23,6 +24,7 @@ const Dealers = () => {
   const [selectedDealer, setSelectedDealer] = useState(null);
   const [dealers, setDealers] = useState([]);
   const [editDealerData, setEditDealerData] = useState(null);
+  const [passwordRequestDealer, setPasswordRequestDealer] = useState(null);
 
   useEffect(() => {
     fetchDealers();
@@ -36,9 +38,11 @@ const Dealers = () => {
         sNo: index + 1,
         name: `${dealer.firstName} ${dealer.lastName}`,
         phoneNumber: dealer.phoneNumber,
-        email: dealer.email,
+        username: dealer.username,
         firstName: dealer.firstName,
         lastName: dealer.lastName,
+        password: dealer.password,
+        passwordChangeRequest: dealer.passwordChangeRequest,
       }));
       setDealers(formattedData);
     } catch (error) {
@@ -60,6 +64,11 @@ const Dealers = () => {
     setIsModalOpen(true);
   };
 
+  const handlePasswordRequest = (record) => {
+    setPasswordRequestDealer(record);
+    setIsModalOpen(true);
+  };
+
   const columns = [
     { title: "S. No.", dataIndex: "sNo", key: "sNo", width: 100 },
     { title: "Name", dataIndex: "name", key: "name" },
@@ -69,7 +78,22 @@ const Dealers = () => {
       key: "phoneNumber",
       width: 180,
     },
-    { title: "Email ID", dataIndex: "email", key: "email", width: 250 },
+    {
+      title: "Password Status",
+      key: "passwordStatus",
+      width: 150,
+      render: (_, record) => (
+        <span
+          className={
+            record.passwordChangeRequest?.status === "pending"
+              ? "animate-pulse text-red-500"
+              : ""
+          }
+        >
+          {record.passwordChangeRequest?.status || "None"}
+        </span>
+      ),
+    },
     {
       title: "Products",
       dataIndex: "product",
@@ -99,13 +123,19 @@ const Dealers = () => {
     {
       title: "Actions",
       key: "action",
-      width: 120,
+      width: 150,
       render: (_, record) => (
         <div className="flex gap-4">
           <EditOutlined
             className="text-blue-600 text-lg cursor-pointer"
             onClick={() => handleEdit(record)}
           />
+          {record.passwordChangeRequest?.status === "pending" && (
+            <LockOutlined
+              className="text-yellow-600 text-lg cursor-pointer"
+              onClick={() => handlePasswordRequest(record)}
+            />
+          )}
           <DeleteOutlined
             className="text-red-500 text-lg cursor-pointer"
             onClick={() => handleDelete(record.key)}
@@ -189,9 +219,15 @@ const Dealers = () => {
 
       <FormModalSub
         visible={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
+        onCancel={() => {
+          setIsModalOpen(false);
+          setPasswordRequestDealer(null);
+          setEditDealerData(null);
+        }}
         onSuccess={fetchDealers}
-        initialData={editDealerData}
+        initialData={editDealerData || passwordRequestDealer}
+        isPasswordRequest={!!passwordRequestDealer}
+        dealerId={passwordRequestDealer?.key}
       />
 
       <SubDealerModal

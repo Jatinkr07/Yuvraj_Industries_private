@@ -3,7 +3,14 @@ import { Modal, Form, Input, Button, Row, Col } from "antd";
 import { createDealer, updateDealer } from "../../../Services/api";
 import { useEffect } from "react";
 
-const FormModalSub = ({ visible, onCancel, onSuccess, initialData }) => {
+const FormModalSub = ({
+  visible,
+  onCancel,
+  onSuccess,
+  initialData,
+  isPasswordRequest = false,
+  dealerId,
+}) => {
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -12,7 +19,12 @@ const FormModalSub = ({ visible, onCancel, onSuccess, initialData }) => {
         firstName: initialData.firstName,
         lastName: initialData.lastName,
         phoneNumber: initialData.phoneNumber,
-        email: initialData.email,
+        username: initialData.username,
+        // Don't pre-fill password unless it's a new dealer creation
+        password:
+          initialData.passwordChangeRequest?.status === "pending"
+            ? undefined
+            : undefined,
       });
     } else {
       form.resetFields();
@@ -21,11 +33,18 @@ const FormModalSub = ({ visible, onCancel, onSuccess, initialData }) => {
 
   const onFinish = async (values) => {
     try {
-      if (initialData) {
+      console.log("Form values being sent:", values);
+      if (initialData && !isPasswordRequest) {
         await updateDealer(initialData.key, values);
+      } else if (isPasswordRequest) {
+        await updateDealer(dealerId, {
+          ...values,
+          passwordChangeRequest: { status: "approved" },
+        });
       } else {
         await createDealer(values);
       }
+      console.log("Dealer update/create successful");
       form.resetFields();
       onSuccess();
       onCancel();
@@ -37,9 +56,19 @@ const FormModalSub = ({ visible, onCancel, onSuccess, initialData }) => {
     }
   };
 
+  const isPasswordEditable =
+    isPasswordRequest ||
+    initialData?.passwordChangeRequest?.status === "pending";
+
   return (
     <Modal
-      title={initialData ? "Edit Dealer" : "Add New Dealer"}
+      title={
+        isPasswordRequest
+          ? "Update Dealer Password"
+          : initialData
+          ? "Edit Dealer"
+          : "Add New Dealer"
+      }
       open={visible}
       onCancel={onCancel}
       footer={[
@@ -47,7 +76,11 @@ const FormModalSub = ({ visible, onCancel, onSuccess, initialData }) => {
           Cancel
         </Button>,
         <Button key="submit" type="primary" htmlType="submit" form="myForm">
-          {initialData ? "Update" : "Submit"}
+          {isPasswordRequest
+            ? "Update Password"
+            : initialData
+            ? "Update"
+            : "Submit"}
         </Button>,
       ]}
     >
@@ -84,39 +117,31 @@ const FormModalSub = ({ visible, onCancel, onSuccess, initialData }) => {
           </Col>
           <Col span={12}>
             <Form.Item
-              label="Email ID"
-              name="email"
-              rules={[
-                { required: true, message: "Please enter email" },
-                { type: "email", message: "Please enter a valid email" },
-              ]}
+              label="Username"
+              name="username"
+              rules={[{ required: true, message: "Please enter username" }]}
             >
-              <Input className="h-12" />
+              <Input
+                className="h-12"
+                disabled={isPasswordRequest || initialData}
+              />
             </Form.Item>
           </Col>
         </Row>
-        {!initialData && (
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Password"
-                name="password"
-                rules={[{ required: true, message: "Please enter password" }]}
-              >
-                <Input.Password className="h-12" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Username"
-                name="username"
-                rules={[{ required: true, message: "Please enter username" }]}
-              >
-                <Input className="h-12" />
-              </Form.Item>
-            </Col>
-          </Row>
-        )}
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              label="Password"
+              name="password"
+              rules={[{ required: true, message: "Please enter password" }]}
+            >
+              <Input.Password
+                className="h-12"
+                disabled={!isPasswordEditable && initialData}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
       </Form>
     </Modal>
   );

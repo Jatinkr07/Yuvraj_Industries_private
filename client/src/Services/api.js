@@ -122,3 +122,20 @@ export const getSales = async () => {
   const response = await api.get("/api/sale/v1/sale/list");
   return response.data;
 };
+
+// export const requestPasswordChange = async (dealerId, newPassword) => {
+//   const response = await api.post(`/api/dealer/${dealerId}/request-password`, {
+//     newPassword,
+//   });
+//   return response.data;
+// };
+
+export const requestPasswordChange = async (data) => {
+  const response = await api.post("/api/dealer/password/request", data);
+  return response.data;
+};
+
+export const updateDealerPasswordByAdmin = async (id, data) => {
+  const response = await api.put(`/api/dealer/password/${id}`, data);
+  return response.data;
+};

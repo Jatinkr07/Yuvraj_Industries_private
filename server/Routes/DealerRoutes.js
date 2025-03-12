@@ -6,6 +6,8 @@ import {
   deleteDealer,
   updateDealer,
   getDealerProducts,
+  requestPasswordChange,
+  updateDealerPasswordByAdmin,
 } from "../Controllers/DealerController.js";
 import {
   authenticateSubDealer,
@@ -31,6 +33,8 @@ router.delete("/:id", isAuthenticated, deleteDealer);
 router.put("/:id", isAuthenticated, updateDealer);
 router.get("/products", isDealerAuthenticated, getDealerProducts);
 router.get("/products/:dealerId", isAuthenticated, getDealerProducts);
+router.post("/password/request", requestPasswordChange);
+router.put("/password/:id", updateDealerPasswordByAdmin);
 
 //Sub-Dealer
 router.post("/subdealer/create", isDealerAuthenticated, createSubDealer);
