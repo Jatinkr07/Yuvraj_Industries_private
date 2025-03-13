@@ -2,6 +2,7 @@ import express from "express";
 import {
   createDealerSale,
   createSale,
+  getAllSales,
   getDealerReplacements,
   getDealerSales,
   getReplacements,
@@ -33,5 +34,7 @@ router.get(
   isDealerAuthenticated,
   getDealerReplacements
 );
+
+router.get("/v1/sales/all", getAllSales);
 
 export default router;

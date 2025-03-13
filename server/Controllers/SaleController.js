@@ -534,3 +534,41 @@ function calculateWarrantyEndDate(startDate, warranty, unit) {
   }
   return endDate;
 }
+
+//get all sales track
+
+export const getAllSales = async (req, res) => {
+  try {
+    const sales = await Sale.find()
+      .populate(
+        "productId",
+        "productName barcode serialNumber warranty warrantyUnit"
+      )
+      .populate("dealerId", "firstName lastName")
+      .populate("subDealerId", "firstName lastName")
+      .sort({ createdAt: -1 });
+
+    const formattedSales = sales.map((sale) => ({
+      saleId: sale._id,
+      serialNumber: sale.productId?.serialNumber || "N/A",
+      productName: sale.productId?.productName || "N/A",
+      barcode: sale.productId?.barcode || "N/A",
+      dealerName: sale.dealerId
+        ? `${sale.dealerId.firstName} ${sale.dealerId.lastName}`
+        : "None",
+      subDealerName: sale.subDealerId
+        ? `${sale.subDealerId.firstName} ${sale.subDealerId.lastName}`
+        : "None",
+      warrantyPeriod: sale.warrantyPeriod,
+      warrantyStartDate: sale.warrantyStartDate,
+      warrantyEndDate: sale.warrantyEndDate,
+    }));
+
+    res.status(200).json({ sales: formattedSales });
+  } catch (error) {
+    console.error("Error fetching all sales:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch sales", error: error.message });
+  }
+};

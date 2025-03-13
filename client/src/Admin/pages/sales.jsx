@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Table, Button, Select, DatePicker, Space } from "antd";
+import { useState, useEffect } from "react";
+import { Table, Button, Select, DatePicker, Space, Input, message } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
@@ -8,72 +8,54 @@ import {
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+import axios from "axios"; // Assuming you're using axios for API calls
+import { API_URL } from "../../Services/api";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
-const data = [
-  {
-    key: "1",
-    sNo: 1,
-    productSNo: "P-1001",
-    productName: "Samsung Galaxy S21",
-    barcode: <QrcodeOutlined className="text-2xl" />,
-    dealerName: "ABC Electronics",
-    warrantyPeriod: "2 Years",
-    warrantyLeft: "1 Year 6 Months",
-    status: "In Warranty",
-    replaced: "Replace",
-    disabled: false,
-  },
-  {
-    key: "2",
-    sNo: 2,
-    productSNo: "P-1002",
-    productName: "Apple iPhone 13",
-    barcode: <QrcodeOutlined className="text-2xl" />,
-    dealerName: "XYZ Mobiles",
-    warrantyPeriod: "1 Year",
-    warrantyLeft: "6 Months",
-    status: "In Warranty",
-    replaced: "Replace",
-    disabled: false,
-  },
-];
-
 const Sales = () => {
-  const [filteredData, setFilteredData] = useState(data);
+  const [salesData, setSalesData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [selectedDateRange, setSelectedDateRange] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState("");
   const [dealerProduct, setDealerProduct] = useState("");
+  const [replacementCode, setReplacementCode] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchSalesData();
+  }, []);
+
+  const fetchSalesData = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/api/sale/v1/sales/all`);
+      setSalesData(response.data.sales);
+      setFilteredData(response.data.sales);
+    } catch (error) {
+      message.error("Failed to fetch sales data", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const columns = [
-    {
-      title: "S. No.",
-      dataIndex: "sNo",
-      key: "sNo",
-      width: 80,
-    },
-    {
-      title: "Product S. No.",
-      dataIndex: "productSNo",
-      key: "productSNo",
-    },
-    {
-      title: "Product Name",
-      dataIndex: "productName",
-      key: "productName",
-    },
+    { title: "S. No.", dataIndex: "sNo", key: "sNo", width: 80 },
+    { title: "Product S. No.", dataIndex: "serialNumber", key: "serialNumber" },
+    { title: "Product Name", dataIndex: "productName", key: "productName" },
     {
       title: "Barcode",
       dataIndex: "barcode",
       key: "barcode",
       width: 150,
+      render: () => <QrcodeOutlined className="text-2xl" />,
     },
+    { title: "Dealer Name", dataIndex: "dealerName", key: "dealerName" },
     {
-      title: "Dealer Name",
-      dataIndex: "dealerName",
-      key: "dealerName",
+      title: "Sub-Dealer Name",
+      dataIndex: "subDealerName",
+      key: "subDealerName",
     },
     {
       title: "Warranty Period",
@@ -84,6 +66,12 @@ const Sales = () => {
       title: "Warranty Left",
       dataIndex: "warrantyLeft",
       key: "warrantyLeft",
+      render: (text) =>
+        text === "Expired" ? (
+          <span className="text-red-500">{text}</span>
+        ) : (
+          text
+        ),
     },
     {
       title: "Status",
@@ -100,8 +88,12 @@ const Sales = () => {
       dataIndex: "replaced",
       key: "replaced",
       render: (text, record) => (
-        <Button type="primary" disabled={record.disabled}>
-          {text}
+        <Button
+          type="primary"
+          disabled={record.warrantyLeft === "Expired"}
+          onClick={() => handleReplace(record)}
+        >
+          Replace
         </Button>
       ),
     },
@@ -128,18 +120,17 @@ const Sales = () => {
     filterData(selectedDateRange, value, dealerProduct);
   };
 
-  // eslint-disable-next-line no-unused-vars
   const handleDealerChange = (value) => {
     setDealerProduct(value);
-    filterData(selectedDateRange, value);
+    filterData(selectedDateRange, selectedProduct, value);
   };
 
   const filterData = (dates, product, dealer) => {
-    let filtered = data;
+    let filtered = salesData;
 
     if (dates && dates.length === 2) {
       filtered = filtered.filter((item) => {
-        const itemDate = new Date(item.date);
+        const itemDate = new Date(item.warrantyStartDate);
         return itemDate >= dates[0] && itemDate <= dates[1];
       });
     }
@@ -152,6 +143,45 @@ const Sales = () => {
     }
 
     setFilteredData(filtered);
+  };
+
+  const calculateWarrantyLeft = (endDate) => {
+    const now = new Date();
+    const warrantyEnd = new Date(endDate);
+    if (warrantyEnd < now) return "Expired";
+
+    const diffMs = warrantyEnd - now;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const years = Math.floor(diffDays / 365);
+    const months = Math.floor((diffDays % 365) / 30);
+    const days = diffDays % 30;
+
+    return `${years > 0 ? years + " Year" + (years > 1 ? "s" : "") + " " : ""}${
+      months > 0 ? months + " Month" + (months > 1 ? "s" : "") + " " : ""
+    }${days > 0 ? days + " Day" + (days > 1 ? "s" : "") : ""}`.trim();
+  };
+
+  const handleReplace = async (record) => {
+    if (!replacementCode) {
+      message.error("Please scan or enter a replacement barcode/serial number");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await axios.post(`/api/sales/replace/${record.saleId}`, {
+        code: replacementCode,
+      });
+      message.success(response.data.message);
+      setReplacementCode("");
+      fetchSalesData(); // Refresh the table
+    } catch (error) {
+      message.error(
+        error.response?.data?.message || "Failed to replace product"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const exportToExcel = () => {
@@ -170,12 +200,15 @@ const Sales = () => {
     doc.save("SalesData.pdf");
   };
 
+  const rowClassName = (record) => {
+    return record.subDealerName && record.dealerName ? "bg-green-100" : "";
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen overflow-y-auto">
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold">Sales List</h1>
-
           <Space>
             <Button type="primary" onClick={exportToExcel}>
               Export to Excel
@@ -185,23 +218,15 @@ const Sales = () => {
             </Button>
           </Space>
         </div>
-        <RangePicker onChange={handleDateRangeChange} />
 
-        <div className="overflow-x-auto">
-          <Table
-            columns={columns}
-            dataSource={filteredData}
-            pagination={{ pageSize: 8 }}
-            scroll={{ x: 1200, y: 500 }}
-          />
-        </div>
-        <div className="flex gap-8 mb-6 lg:ml-60">
+        <Space direction="vertical" size="middle" className="mb-6">
+          <RangePicker onChange={handleDateRangeChange} />
           <Select
             placeholder="Select Product"
             style={{ width: 200 }}
             onChange={handleProductChange}
           >
-            {[...new Set(data.map((item) => item.productName))].map(
+            {[...new Set(salesData.map((item) => item.productName))].map(
               (product) => (
                 <Option key={product} value={product}>
                   {product}
@@ -209,6 +234,45 @@ const Sales = () => {
               )
             )}
           </Select>
+          <Select
+            placeholder="Select Dealer"
+            style={{ width: 200 }}
+            onChange={handleDealerChange}
+          >
+            {[...new Set(salesData.map((item) => item.dealerName))]
+              .filter(Boolean)
+              .map((dealer) => (
+                <Option key={dealer} value={dealer}>
+                  {dealer}
+                </Option>
+              ))}
+          </Select>
+          <Input
+            placeholder="Scan or enter replacement barcode/serial number"
+            value={replacementCode}
+            onChange={(e) => setReplacementCode(e.target.value)}
+            prefix={<QrcodeOutlined />}
+            style={{ width: 300 }}
+          />
+        </Space>
+
+        <div className="overflow-x-auto">
+          <Table
+            columns={columns}
+            dataSource={filteredData.map((item, index) => ({
+              ...item,
+              sNo: index + 1,
+              warrantyLeft: calculateWarrantyLeft(item.warrantyEndDate),
+              status:
+                calculateWarrantyLeft(item.warrantyEndDate) === "Expired"
+                  ? "Expired"
+                  : "In Warranty",
+            }))}
+            pagination={{ pageSize: 8 }}
+            scroll={{ x: 1500, y: 500 }}
+            loading={loading}
+            rowClassName={rowClassName}
+          />
         </div>
       </div>
     </div>
