@@ -12,6 +12,7 @@ import {
 } from "@ant-design/icons";
 import { saveAs } from "file-saver";
 import { toPng } from "html-to-image";
+import QRCodeLib from "qrcode"; // Import qrcode library
 import FormModal from "../components/products/FormModal";
 import ProductTemplate from "./Template/Template.jsx";
 import InnerTemplate from "./Template/InnerTemplate.jsx";
@@ -26,11 +27,7 @@ import {
 } from "../../Services/api.js";
 
 // Utility function to generate and download templates
-const generateAndDownloadTemplate = async (
-  products,
-  TemplateComponent,
-  type
-) => {
+const generateAndDownloadTemplate = async (products, type) => {
   const offscreenContainer = document.createElement("div");
   offscreenContainer.style.position = "absolute";
   offscreenContainer.style.left = "-9999px";
@@ -38,23 +35,21 @@ const generateAndDownloadTemplate = async (
 
   try {
     for (const product of products) {
-      // Create a temporary container for each product
       const tempContainer = document.createElement("div");
       offscreenContainer.appendChild(tempContainer);
 
-      // Render the template component off-screen
-      const template = (
-        <TemplateComponent
-          product={product}
-          visible={true}
-          onClose={() => {}}
-        />
-      );
-      // Here we assume ReactDOM.render could be used, but since we're in a functional context,
-      // we'll simulate the rendering by manipulating DOM directly
-      tempContainer.innerHTML = `<div class="${
-        type === "outer" ? "product-template-card" : "inner-template-card"
-      }">${template.props.children.props.children}</div>`;
+      // Simulate the template HTML (simplified; ideally use ReactDOMServer.renderToString if server-side)
+      tempContainer.innerHTML = `
+        <div class="${
+          type === "outer" ? "product-template-card" : "inner-template-card"
+        }">
+          <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #D1D5DB; background-color: #F9FAFB;">
+            <h3>${product.serialNumber || "N/A"}</h3>
+            <p>${product.productName || "N/A"}</p>
+            <!-- Add more product details here based on template -->
+          </div>
+        </div>
+      `;
 
       const element = tempContainer.querySelector(
         `.${type === "outer" ? "product-template-card" : "inner-template-card"}`
@@ -69,8 +64,6 @@ const generateAndDownloadTemplate = async (
 
       const dataUrl = await toPng(element, { cacheBust: true });
       saveAs(dataUrl, `${type}-template-${product.serialNumber}.png`);
-
-      // Cleanup
       offscreenContainer.removeChild(tempContainer);
     }
   } catch (error) {
@@ -130,7 +123,7 @@ const Products = () => {
   const fetchDealers = useCallback(async () => {
     try {
       const dealerData = await getDealersAll();
-      console.log("Raw dealer data:", dealerData); // Debug
+      console.log("Raw dealer data:", dealerData);
       setDealers(Array.isArray(dealerData) ? dealerData : []);
     } catch (error) {
       console.error("Error fetching dealers:", error.message);
@@ -260,22 +253,29 @@ const Products = () => {
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const qrCanvas = document.createElement("canvas");
-    new QRCode(qrCanvas, {
-      text: product.barcode || product.serialNumber,
-      width: size,
-      height: size,
-    });
+    QRCodeLib.toCanvas(
+      canvas,
+      product.barcode || product.serialNumber,
+      {
+        width: size,
+        height: size,
+        margin: 0,
+      },
+      (error) => {
+        if (error) {
+          console.error("Error generating QR code:", error);
+          return;
+        }
+        ctx.fillStyle = "#000";
+        ctx.font = "16px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(product.serialNumber, size / 2, size + 20);
 
-    ctx.drawImage(qrCanvas, 0, 0);
-    ctx.fillStyle = "#000";
-    ctx.font = "16px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText(product.serialNumber, size / 2, size + 20);
-
-    canvas.toBlob((blob) => {
-      saveAs(blob, `qrcode-${product.serialNumber}.png`);
-    });
+        canvas.toBlob((blob) => {
+          saveAs(blob, `qrcode-${product.serialNumber}.png`);
+        });
+      }
+    );
   };
 
   const handleBulkDownloadQR = () => {
@@ -293,7 +293,7 @@ const Products = () => {
       setSelectedProduct(selectedProducts[0]);
       setIsInnerTemplateModalOpen(true);
     } else {
-      generateAndDownloadTemplate(selectedProducts, InnerTemplate, "inner");
+      generateAndDownloadTemplate(selectedProducts, "inner");
     }
   };
 
@@ -305,7 +305,7 @@ const Products = () => {
       setSelectedProduct(selectedProducts[0]);
       setIsTemplateModalOpen(true);
     } else {
-      generateAndDownloadTemplate(selectedProducts, ProductTemplate, "outer");
+      generateAndDownloadTemplate(selectedProducts, "outer");
     }
   };
 
