@@ -390,6 +390,7 @@ export const assignProductToSubDealer = async (req, res) => {
     product.assignedToSubDealerAt = new Date();
     product.assignedTo = null;
     product.isAssigned = false;
+    product.originalDealerId = dealerId;
     await product.save();
 
     res

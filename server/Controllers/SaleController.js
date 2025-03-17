@@ -1,6 +1,7 @@
 import Product from "../Model/Products.js";
 import Sale from "../Model/SaleModel.js";
 import Replacement from "../Model/Replacement.js";
+import Dealer from "../Model/Dealer.js";
 
 // Sub-Dealer Sale (Existing)
 export const createSale = async (req, res) => {
@@ -542,27 +543,47 @@ export const getAllSales = async (req, res) => {
     const sales = await Sale.find()
       .populate(
         "productId",
-        "productName barcode serialNumber warranty warrantyUnit"
+        "productName barcode serialNumber warranty warrantyUnit originalDealerId"
       )
       .populate("dealerId", "firstName lastName")
       .populate("subDealerId", "firstName lastName")
       .sort({ createdAt: -1 });
 
-    const formattedSales = sales.map((sale) => ({
-      saleId: sale._id,
-      serialNumber: sale.productId?.serialNumber || "N/A",
-      productName: sale.productId?.productName || "N/A",
-      barcode: sale.productId?.barcode || "N/A",
-      dealerName: sale.dealerId
-        ? `${sale.dealerId.firstName} ${sale.dealerId.lastName}`
-        : "None",
-      subDealerName: sale.subDealerId
-        ? `${sale.subDealerId.firstName} ${sale.subDealerId.lastName}`
-        : "None",
-      warrantyPeriod: sale.warrantyPeriod,
-      warrantyStartDate: sale.warrantyStartDate,
-      warrantyEndDate: sale.warrantyEndDate,
-    }));
+    const formattedSales = await Promise.all(
+      sales.map(async (sale) => {
+        let dealerName = "None";
+        let subDealerName = "None";
+
+        if (sale.soldBy === "dealer" && sale.dealerId) {
+          // Dealer sold directly
+          dealerName = `${sale.dealerId.firstName} ${sale.dealerId.lastName}`;
+        } else if (sale.soldBy === "subDealer" && sale.subDealerId) {
+          // Sub-dealer sold the product
+          subDealerName = `${sale.subDealerId.firstName} ${sale.subDealerId.lastName}`;
+          // Get the dealer who originally assigned the product
+          const product = sale.productId;
+          if (product && product.originalDealerId) {
+            const dealer = await Dealer.findById(product.originalDealerId);
+            if (dealer) {
+              dealerName = `${dealer.firstName} ${dealer.lastName}`;
+            }
+          }
+        }
+
+        return {
+          saleId: sale._id,
+          serialNumber: sale.productId?.serialNumber || "N/A",
+          productName: sale.productId?.productName || "N/A",
+          barcode: sale.productId?.barcode || "N/A",
+          dealerName,
+          subDealerName,
+          warrantyPeriod: sale.warrantyPeriod,
+          warrantyStartDate: sale.warrantyStartDate,
+          warrantyEndDate: sale.warrantyEndDate,
+          soldBy: sale.soldBy,
+        };
+      })
+    );
 
     res.status(200).json({ sales: formattedSales });
   } catch (error) {

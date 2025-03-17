@@ -8,7 +8,7 @@ import {
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import axios from "axios"; // Assuming you're using axios for API calls
+import axios from "axios";
 import { API_URL } from "../../Services/api";
 
 const { Option } = Select;
@@ -31,10 +31,12 @@ const Sales = () => {
     try {
       setLoading(true);
       const response = await axios.get(`${API_URL}/api/sale/v1/sales/all`);
-      setSalesData(response.data.sales);
-      setFilteredData(response.data.sales);
+      setSalesData(response.data.sales || []);
+      setFilteredData(response.data.sales || []);
     } catch (error) {
       message.error("Failed to fetch sales data", error);
+      setSalesData([]);
+      setFilteredData([]);
     } finally {
       setLoading(false);
     }
@@ -126,7 +128,7 @@ const Sales = () => {
   };
 
   const filterData = (dates, product, dealer) => {
-    let filtered = salesData;
+    let filtered = salesData || [];
 
     if (dates && dates.length === 2) {
       filtered = filtered.filter((item) => {
@@ -174,7 +176,7 @@ const Sales = () => {
       });
       message.success(response.data.message);
       setReplacementCode("");
-      fetchSalesData(); // Refresh the table
+      fetchSalesData();
     } catch (error) {
       message.error(
         error.response?.data?.message || "Failed to replace product"
@@ -201,7 +203,9 @@ const Sales = () => {
   };
 
   const rowClassName = (record) => {
-    return record.subDealerName && record.dealerName ? "bg-green-100" : "";
+    return record.subDealerName !== "None" && record.soldBy === "subDealer"
+      ? "bg-green-100"
+      : "";
   };
 
   return (
@@ -225,21 +229,23 @@ const Sales = () => {
             placeholder="Select Product"
             style={{ width: 200 }}
             onChange={handleProductChange}
+            disabled={loading || !salesData.length}
           >
-            {[...new Set(salesData.map((item) => item.productName))].map(
-              (product) => (
-                <Option key={product} value={product}>
-                  {product}
-                </Option>
-              )
-            )}
+            {[
+              ...new Set((salesData || []).map((item) => item.productName)),
+            ].map((product) => (
+              <Option key={product} value={product}>
+                {product}
+              </Option>
+            ))}
           </Select>
           <Select
             placeholder="Select Dealer"
             style={{ width: 200 }}
             onChange={handleDealerChange}
+            disabled={loading || !salesData.length}
           >
-            {[...new Set(salesData.map((item) => item.dealerName))]
+            {[...new Set((salesData || []).map((item) => item.dealerName))]
               .filter(Boolean)
               .map((dealer) => (
                 <Option key={dealer} value={dealer}>
@@ -259,7 +265,7 @@ const Sales = () => {
         <div className="overflow-x-auto">
           <Table
             columns={columns}
-            dataSource={filteredData.map((item, index) => ({
+            dataSource={(filteredData || []).map((item, index) => ({
               ...item,
               sNo: index + 1,
               warrantyLeft: calculateWarrantyLeft(item.warrantyEndDate),
