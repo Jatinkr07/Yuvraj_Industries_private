@@ -87,7 +87,12 @@ export const getDealerProducts = async (req, res) => {
       return res.status(400).json({ message: "Dealer ID is required" });
     }
 
-    const products = await Product.find({ assignedTo: dealerId })
+    const products = await Product.find({
+      $or: [
+        { assignedTo: dealerId, isAssigned: true },
+        { originalAssignedDealer: dealerId },
+      ],
+    })
       .populate("category", "name")
       .sort({ assignedAt: -1 });
 

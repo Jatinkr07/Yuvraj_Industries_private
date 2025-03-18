@@ -205,14 +205,14 @@ function calculateWarrantyDays(warranty, unit) {
 export const assignProductToDealer = async (req, res) => {
   try {
     const { code, dealerId } = req.body;
-    const adminId = req.adminId; // Assuming admin middleware sets this
+    const assignerId = req.adminId || req.dealerId;
+    const isAdmin = !!req.adminId;
 
     if (!code) {
       return res
         .status(400)
         .json({ message: "No barcode or serial number provided" });
     }
-
     if (!dealerId) {
       return res.status(400).json({ message: "No dealer selected" });
     }
@@ -235,11 +235,64 @@ export const assignProductToDealer = async (req, res) => {
     product.assignedTo = dealerId;
     product.isAssigned = true;
     product.assignedAt = new Date();
-    product.assignedBy = adminId;
+    product.assignedBy = assignerId;
+    product.assignedByAdmin = isAdmin;
+    product.originalAssignedDealer = dealerId;
     await product.save();
 
-    res.status(200).json({ message: "Product assigned to dealer", product });
+    res.status(200).json({
+      message: `Product assigned to dealer by ${isAdmin ? "admin" : "dealer"}`,
+      product,
+    });
   } catch (error) {
+    console.error(
+      "[Backend] Error assigning product to dealer:",
+      error.message
+    );
+    res
+      .status(500)
+      .json({ message: "Failed to assign product", error: error.message });
+  }
+};
+
+export const dealerManualAssignProduct = async (req, res) => {
+  try {
+    const { productId } = req.body;
+    const dealerId = req.dealerId;
+
+    if (!productId) {
+      return res.status(400).json({ message: "No product ID provided" });
+    }
+
+    const product = await Product.findOne({
+      _id: productId,
+      assignedTo: null,
+      isAssigned: false,
+      assignedToSubDealer: null,
+      isAssignedToSubDealer: false,
+      isReplaced: false,
+    });
+
+    if (!product) {
+      return res.status(404).json({
+        message: "Product not found or already assigned/sold/replaced",
+      });
+    }
+
+    product.assignedTo = dealerId;
+    product.isAssigned = true;
+    product.assignedAt = new Date();
+    product.assignedBy = dealerId;
+    product.assignedByAdmin = false;
+    product.originalAssignedDealer = dealerId;
+    await product.save();
+
+    res.status(200).json({
+      message: "Product manually assigned to dealer",
+      product,
+    });
+  } catch (error) {
+    console.error("[Backend] Error in manual assignment:", error.message);
     res
       .status(500)
       .json({ message: "Failed to assign product", error: error.message });
@@ -250,7 +303,8 @@ export const assignProductToDealer = async (req, res) => {
 export const bulkAssignProductsToDealer = async (req, res) => {
   try {
     const { productIds, dealerId } = req.body;
-    const adminId = req.adminId;
+    const assignerId = req.adminId || req.dealerId;
+    const isAdmin = !!req.adminId;
 
     if (!dealerId || !productIds?.length) {
       return res
@@ -258,7 +312,7 @@ export const bulkAssignProductsToDealer = async (req, res) => {
         .json({ message: "Dealer ID and product IDs are required" });
     }
 
-    const products = await Product.updateMany(
+    const result = await Product.updateMany(
       {
         _id: { $in: productIds },
         assignedTo: null,
@@ -271,14 +325,25 @@ export const bulkAssignProductsToDealer = async (req, res) => {
         assignedTo: dealerId,
         isAssigned: true,
         assignedAt: new Date(),
-        assignedBy: adminId,
+        assignedBy: assignerId,
+        assignedByAdmin: isAdmin,
+        originalAssignedDealer: dealerId,
       }
     );
 
+    if (result.modifiedCount === 0) {
+      return res
+        .status(404)
+        .json({ message: "No products assigned (none available)" });
+    }
+
     res.status(200).json({
-      message: `Successfully assigned ${products.modifiedCount} products to dealer`,
+      message: `Successfully assigned ${
+        result.modifiedCount
+      } products to dealer by ${isAdmin ? "admin" : "dealer"}`,
     });
   } catch (error) {
+    console.error("[Backend] Error in bulk assignment:", error.message);
     res.status(500).json({
       message: "Failed to bulk assign products",
       error: error.message,
@@ -360,8 +425,8 @@ export const bulkAssignProductsToDealer = async (req, res) => {
 export const assignProductToSubDealer = async (req, res) => {
   try {
     const { code } = req.body;
-    const subDealerId = req.subDealerId;
-    const dealerId = req.dealerId;
+    const subDealerId = req.subDealerId; // From auth middleware
+    const dealerId = req.dealerId; // From auth middleware
 
     if (!code) {
       return res
@@ -369,7 +434,7 @@ export const assignProductToSubDealer = async (req, res) => {
         .json({ message: "No barcode or serial number provided" });
     }
 
-    let product = await Product.findOne({
+    const product = await Product.findOne({
       $or: [{ barcode: code }, { serialNumber: code }],
       assignedTo: dealerId,
       isAssigned: true,
@@ -385,17 +450,18 @@ export const assignProductToSubDealer = async (req, res) => {
       });
     }
 
+    product.assignedTo = null; // Remove from dealer
+    product.isAssigned = false;
     product.assignedToSubDealer = subDealerId;
     product.isAssignedToSubDealer = true;
     product.assignedToSubDealerAt = new Date();
-    product.assignedTo = null;
-    product.isAssigned = false;
-    product.originalDealerId = dealerId;
+    // originalAssignedDealer remains unchanged
     await product.save();
 
-    res
-      .status(200)
-      .json({ message: "Product assigned to sub-dealer", product });
+    res.status(200).json({
+      message: "Product assigned to sub-dealer",
+      product,
+    });
   } catch (error) {
     console.error(
       "[Backend] Error assigning product to sub-dealer:",

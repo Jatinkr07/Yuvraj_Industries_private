@@ -1,43 +1,139 @@
-import React, { useState } from "react";
+/* eslint-disable no-unused-vars */
+import React, { useState, useEffect } from "react";
 import { Table, Input, Button, Select } from "antd";
-
 import {
   EditOutlined,
   DeleteOutlined,
-  PlusOutlined,
   SearchOutlined,
-  EyeOutlined,
   QrcodeOutlined,
 } from "@ant-design/icons";
+import axios from "axios";
+import { API_URL } from "../../Services/api";
+
+const { Option } = Select;
 
 const Replaced = () => {
+  const [replacements, setReplacements] = useState([]);
+  const [filteredReplacements, setFilteredReplacements] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("show_all");
+
+  useEffect(() => {
+    fetchReplacements();
+  }, []);
+
+  const fetchReplacements = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `${API_URL}/api/sale/v1/replacements/all`,
+        {
+          withCredentials: true,
+        }
+      );
+      const data = response.data.replacements || [];
+      setReplacements(data);
+      filterReplacements(data, searchText, statusFilter);
+    } catch (error) {
+      console.error("Error fetching replacements:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateWarrantyLeft = (endDate) => {
+    const now = new Date();
+    const warrantyEnd = new Date(endDate);
+    if (warrantyEnd < now) return "Expired";
+    const diffMs = warrantyEnd - now;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const years = Math.floor(diffDays / 365);
+    const months = Math.floor((diffDays % 365) / 30);
+    const days = diffDays % 30;
+    return `${years > 0 ? years + " Year" + (years > 1 ? "s" : "") + " " : ""}${
+      months > 0 ? months + " Month" + (months > 1 ? "s" : "") + " " : ""
+    }${days > 0 ? days + " Day" + (days > 1 ? "s" : "") : ""}`.trim();
+  };
+
+  const filterReplacements = (data, search, status) => {
+    let filtered = [...data];
+
+    // Search filter
+    if (search) {
+      filtered = filtered.filter(
+        (item) =>
+          item.originalSerialNumber
+            ?.toLowerCase()
+            .includes(search.toLowerCase()) ||
+          item.newSerialNumber?.toLowerCase().includes(search.toLowerCase()) ||
+          item.originalProductName
+            ?.toLowerCase()
+            .includes(search.toLowerCase()) ||
+          item.newProductName?.toLowerCase().includes(search.toLowerCase()) ||
+          item.dealerName?.toLowerCase().includes(search.toLowerCase()) ||
+          item.subDealerName?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    // Status filter
+    if (status === "active") {
+      filtered = filtered.filter(
+        (item) => calculateWarrantyLeft(item.warrantyEndDate) !== "Expired"
+      );
+    } else if (status === "inactive") {
+      filtered = filtered.filter(
+        (item) => calculateWarrantyLeft(item.warrantyEndDate) === "Expired"
+      );
+    }
+
+    setFilteredReplacements(filtered);
+  };
+
+  const handleSearch = (value) => {
+    setSearchText(value);
+    filterReplacements(replacements, value, statusFilter);
+  };
+
+  const handleStatusChange = (value) => {
+    setStatusFilter(value);
+    filterReplacements(replacements, searchText, value);
+  };
+
   const columns = [
+    { title: "S. No.", dataIndex: "sNo", key: "sNo", width: 80 },
     {
-      title: "S. No.",
-      dataIndex: "sNo",
-      key: "sNo",
-      width: 80,
+      title: "Original S. No.",
+      dataIndex: "originalSerialNumber",
+      key: "originalSerialNumber",
     },
     {
-      title: "Product S. No.",
-      dataIndex: "productSNo",
-      key: "productSNo",
+      title: "Original Product",
+      dataIndex: "originalProductName",
+      key: "originalProductName",
     },
     {
-      title: "Replaced By",
-      dataIndex: "replacedBy",
-      key: "replacedBy",
+      title: "Replaced By S. No.",
+      dataIndex: "newSerialNumber",
+      key: "newSerialNumber",
     },
     {
-      title: "Barcode",
-      dataIndex: "barcode",
-      key: "barcode",
+      title: "New Product",
+      dataIndex: "newProductName",
+      key: "newProductName",
+    },
+    {
+      title: "New Barcode",
+      dataIndex: "newBarcode",
+      key: "newBarcode",
       width: 150,
+      render: (text) => <QrcodeOutlined className="text-2xl" />,
     },
+    { title: "Dealer Name", dataIndex: "dealerName", key: "dealerName" },
     {
-      title: "Dealer Name",
-      dataIndex: "dealerName",
-      key: "dealerName",
+      title: "Sub-Dealer Name",
+      dataIndex: "subDealerName",
+      key: "subDealerName",
     },
     {
       title: "Warranty Period",
@@ -48,6 +144,24 @@ const Replaced = () => {
       title: "Warranty Left",
       dataIndex: "warrantyLeft",
       key: "warrantyLeft",
+      render: (text) => (
+        <span
+          className={text === "Expired" ? "text-red-500" : "text-green-500"}
+        >
+          {text}
+        </span>
+      ),
+    },
+    {
+      title: "Replaced By",
+      dataIndex: "replacedBy",
+      key: "replacedBy",
+    },
+    {
+      title: "Replaced Date",
+      dataIndex: "replacedDate",
+      key: "replacedDate",
+      render: (text) => new Date(text).toLocaleDateString(),
     },
     {
       title: "Actions",
@@ -62,149 +176,6 @@ const Replaced = () => {
     },
   ];
 
-  const data = [
-    {
-      key: "1",
-      sNo: 1,
-      productSNo: "P-1001",
-      productName: "Samsung Galaxy S21",
-      barcode: <QrcodeOutlined className="text-2xl" />,
-      dealerName: "ABC Electronics",
-      warrantyPeriod: "2 Years",
-      warrantyLeft: "1 Year 6 Months",
-      status: "In Warranty",
-      replaced: "Replace",
-      replacedBy: "N/A",
-      disabled: false,
-    },
-    {
-      key: "2",
-      sNo: 2,
-      productSNo: "P-1002",
-      productName: "Apple iPhone 13",
-      barcode: <QrcodeOutlined className="text-2xl" />,
-      dealerName: "XYZ Mobiles",
-      warrantyPeriod: "1 Year",
-      warrantyLeft: "6 Months",
-      status: "In Warranty",
-      replaced: "Replace",
-      replacedBy: "N/A",
-      disabled: false,
-    },
-    {
-      key: "3",
-      sNo: 3,
-      productSNo: "P-1003",
-      productName: "Dell Inspiron 15",
-      barcode: <QrcodeOutlined className="text-2xl" />,
-      dealerName: "Tech World",
-      warrantyPeriod: "3 Years",
-      warrantyLeft: "2 Years 4 Months",
-      status: "In Warranty",
-      replaced: "Replace",
-      replacedBy: "N/A",
-      disabled: false,
-    },
-    {
-      key: "4",
-      sNo: 4,
-      productSNo: "P-1004",
-      productName: "Sony Bravia TV",
-      barcode: <QrcodeOutlined className="text-2xl" />,
-      dealerName: "Home Appliances",
-      warrantyPeriod: "2 Years",
-      warrantyLeft: "8 Months",
-      status: "In Warranty",
-      replaced: "Replace",
-      replacedBy: "N/A",
-      disabled: false,
-    },
-    {
-      key: "5",
-      sNo: 5,
-      productSNo: "P-1005",
-      productName: "HP Pavilion x360",
-      barcode: <QrcodeOutlined className="text-2xl" />,
-      dealerName: "Laptop Hub",
-      warrantyPeriod: "1 Year",
-      warrantyLeft: "Expired",
-      status: "Out of Warranty",
-      replaced: "Replace",
-      replacedBy: "John Doe",
-      disabled: true,
-    },
-    {
-      key: "6",
-      sNo: 6,
-      productSNo: "P-1006",
-      productName: "OnePlus 9 Pro",
-      barcode: <QrcodeOutlined className="text-2xl" />,
-      dealerName: "Smartphone Plaza",
-      warrantyPeriod: "2 Years",
-      warrantyLeft: "1 Year",
-      status: "In Warranty",
-      replaced: "Replace",
-      replacedBy: "N/A",
-      disabled: false,
-    },
-    {
-      key: "7",
-      sNo: 7,
-      productSNo: "P-1007",
-      productName: "Bose Soundbar 700",
-      barcode: <QrcodeOutlined className="text-2xl" />,
-      dealerName: "Music World",
-      warrantyPeriod: "1 Year",
-      warrantyLeft: "2 Months",
-      status: "In Warranty",
-      replaced: "Replace",
-      replacedBy: "N/A",
-      disabled: false,
-    },
-    {
-      key: "8",
-      sNo: 8,
-      productSNo: "P-1008",
-      productName: "Canon EOS R5",
-      barcode: <QrcodeOutlined className="text-2xl" />,
-      dealerName: "Camera Store",
-      warrantyPeriod: "3 Years",
-      warrantyLeft: "2 Years",
-      status: "In Warranty",
-      replaced: "Replace",
-      replacedBy: "N/A",
-      disabled: false,
-    },
-    {
-      key: "9",
-      sNo: 9,
-      productSNo: "P-1009",
-      productName: "LG Refrigerator",
-      barcode: <QrcodeOutlined className="text-2xl" />,
-      dealerName: "Home Needs",
-      warrantyPeriod: "5 Years",
-      warrantyLeft: "3 Years 7 Months",
-      status: "In Warranty",
-      replaced: "Replace",
-      replacedBy: "N/A",
-      disabled: false,
-    },
-    {
-      key: "10",
-      sNo: 10,
-      productSNo: "P-1010",
-      productName: "Asus ROG Strix",
-      barcode: <QrcodeOutlined className="text-2xl" />,
-      dealerName: "Gaming World",
-      warrantyPeriod: "2 Years",
-      warrantyLeft: "Expired",
-      status: "Out of Warranty",
-      replaced: "Replace",
-      replacedBy: "Jane Smith",
-      disabled: true,
-    },
-  ];
-
   return (
     <div className="bg-gray-50 min-h-screen overflow-y-auto">
       <div className="bg-white rounded-lg shadow-sm p-6">
@@ -216,18 +187,20 @@ const Replaced = () => {
           <Select
             defaultValue="show_all"
             style={{ width: 120 }}
+            onChange={handleStatusChange}
             options={[
               { value: "show_all", label: "Show all" },
               { value: "active", label: "Active" },
               { value: "inactive", label: "Inactive" },
             ]}
           />
-
           <div className="flex-grow">
             <Input
-              placeholder="Search"
+              placeholder="Search by serial number, product, or name"
               suffix={<SearchOutlined />}
               className="max-w-sm"
+              value={searchText}
+              onChange={(e) => handleSearch(e.target.value)}
             />
           </div>
         </div>
@@ -235,9 +208,14 @@ const Replaced = () => {
         <div className="overflow-x-auto">
           <Table
             columns={columns}
-            dataSource={data}
+            dataSource={filteredReplacements.map((item, index) => ({
+              ...item,
+              sNo: index + 1,
+              warrantyLeft: calculateWarrantyLeft(item.warrantyEndDate),
+            }))}
             pagination={{ pageSize: 10 }}
-            scroll={{ x: 1200, y: 500 }}
+            scroll={{ x: 1500, y: 500 }}
+            loading={loading}
           />
         </div>
       </div>

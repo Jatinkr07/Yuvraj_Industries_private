@@ -4,8 +4,8 @@ import {
   getProducts,
   updateProduct,
   deleteProduct,
-  assignProductToDealer,
   assignProductToSubDealer,
+  dealerManualAssignProduct,
 } from "../Controllers/ProductController.js";
 import {
   authenticateSubDealer,
@@ -18,7 +18,7 @@ router.post("/", createProduct);
 router.get("/", getProducts);
 router.put("/:id", updateProduct);
 router.delete("/:id", deleteProduct);
-router.post("/assign", isDealerAuthenticated, assignProductToDealer);
+router.post("/assign", isDealerAuthenticated, dealerManualAssignProduct);
 router.post(
   "/subdealer/assign-product",
   authenticateSubDealer,

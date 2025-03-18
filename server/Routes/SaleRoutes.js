@@ -1,7 +1,9 @@
 import express from "express";
 import {
+  adminReplaceProduct,
   createDealerSale,
   createSale,
+  getAllReplacements,
   getAllSales,
   getDealerReplacements,
   getDealerSales,
@@ -11,6 +13,7 @@ import {
   replaceProduct,
 } from "../Controllers/SaleController.js";
 import {
+  isAuthenticated,
   isDealerAuthenticated,
   isSubDealerAuthenticated,
 } from "../Middleware/authMiddleware.js";
@@ -36,5 +39,12 @@ router.get(
 );
 
 router.get("/v1/sales/all", getAllSales);
+router.post(
+  "/v1/sales/replace/admin/:saleId",
+  isAuthenticated,
+  adminReplaceProduct
+);
+
+router.get("/v1/replacements/all", isAuthenticated, getAllReplacements);
 
 export default router;

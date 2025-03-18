@@ -47,6 +47,7 @@ export const createSale = async (req, res) => {
 
     const sale = new Sale({
       productId: product._id,
+      dealerId: product.originalAssignedDealer,
       subDealerId,
       warrantyStartDate,
       warrantyEndDate,
@@ -73,99 +74,99 @@ export const createSale = async (req, res) => {
   }
 };
 
-export const assignProductToDealer = async (req, res) => {
-  try {
-    const { code } = req.body;
-    const dealerId = req.dealerId;
+// export const assignProductToDealer = async (req, res) => {
+//   try {
+//     const { code } = req.body;
+//     const dealerId = req.dealerId;
 
-    if (!code) {
-      return res
-        .status(400)
-        .json({ message: "No barcode or serial number provided" });
-    }
+//     if (!code) {
+//       return res
+//         .status(400)
+//         .json({ message: "No barcode or serial number provided" });
+//     }
 
-    const product = await Product.findOne({
-      $or: [{ barcode: code }, { serialNumber: code }],
-      assignedTo: null,
-      isAssigned: false,
-      assignedToSubDealer: null,
-      isAssignedToSubDealer: false,
-      isReplaced: false,
-    });
+//     const product = await Product.findOne({
+//       $or: [{ barcode: code }, { serialNumber: code }],
+//       assignedTo: null,
+//       isAssigned: false,
+//       assignedToSubDealer: null,
+//       isAssignedToSubDealer: false,
+//       isReplaced: false,
+//     });
 
-    if (!product) {
-      return res.status(404).json({
-        message: "Product not found or already assigned/sold/replaced",
-      });
-    }
+//     if (!product) {
+//       return res.status(404).json({
+//         message: "Product not found or already assigned/sold/replaced",
+//       });
+//     }
 
-    product.assignedTo = dealerId;
-    product.isAssigned = true;
-    product.assignedAt = new Date();
-    await product.save();
+//     product.assignedTo = dealerId;
+//     product.isAssigned = true;
+//     product.assignedAt = new Date();
+//     await product.save();
 
-    res.status(200).json({ message: "Product assigned to dealer", product });
-  } catch (error) {
-    console.error(
-      "[Backend] Error assigning product to dealer:",
-      error.message
-    );
-    res
-      .status(500)
-      .json({ message: "Failed to assign product", error: error.message });
-  }
-};
+//     res.status(200).json({ message: "Product assigned to dealer", product });
+//   } catch (error) {
+//     console.error(
+//       "[Backend] Error assigning product to dealer:",
+//       error.message
+//     );
+//     res
+//       .status(500)
+//       .json({ message: "Failed to assign product", error: error.message });
+//   }
+// };
 
-//Sub dealer product assign
-export const assignProductToSubDealer = async (req, res) => {
-  try {
-    const { code } = req.body;
-    const subDealerId = req.subDealerId;
-    const dealerId = req.dealerId;
+// //Sub dealer product assign
+// export const assignProductToSubDealer = async (req, res) => {
+//   try {
+//     const { code } = req.body;
+//     const subDealerId = req.subDealerId;
+//     const dealerId = req.dealerId;
 
-    if (!code) {
-      return res
-        .status(400)
-        .json({ message: "No barcode or serial number provided" });
-    }
+//     if (!code) {
+//       return res
+//         .status(400)
+//         .json({ message: "No barcode or serial number provided" });
+//     }
 
-    let product = await Product.findOne({
-      $or: [{ barcode: code }, { serialNumber: code }],
-      assignedTo: dealerId,
-      isAssigned: true,
-      assignedToSubDealer: null,
-      isAssignedToSubDealer: false,
-      isReplaced: false,
-    });
+//     let product = await Product.findOne({
+//       $or: [{ barcode: code }, { serialNumber: code }],
+//       assignedTo: dealerId,
+//       isAssigned: true,
+//       assignedToSubDealer: null,
+//       isAssignedToSubDealer: false,
+//       isReplaced: false,
+//     });
 
-    if (!product) {
-      return res.status(404).json({
-        message:
-          "Product not found, not assigned to your dealer, or already assigned/sold/replaced",
-      });
-    }
+//     if (!product) {
+//       return res.status(404).json({
+//         message:
+//           "Product not found, not assigned to your dealer, or already assigned/sold/replaced",
+//       });
+//     }
 
-    product.assignedToSubDealer = subDealerId;
-    product.isAssignedToSubDealer = true;
-    product.assignedToSubDealerAt = new Date();
-    product.assignedTo = null; // Remove from dealer
-    product.isAssigned = false;
-    await product.save();
+//     product.assignedToSubDealer = subDealerId;
+//     product.isAssignedToSubDealer = true;
+//     product.assignedToSubDealerAt = new Date();
+//     product.assignedTo = null; // Remove from dealer
+//     product.isAssigned = false;
+//     await product.save();
 
-    res
-      .status(200)
-      .json({ message: "Product assigned to sub-dealer", product });
-  } catch (error) {
-    console.error(
-      "[Backend] Error assigning product to sub-dealer:",
-      error.message
-    );
-    res.status(500).json({
-      message: "Failed to assign product to sub-dealer",
-      error: error.message,
-    });
-  }
-};
+//     res
+//       .status(200)
+//       .json({ message: "Product assigned to sub-dealer", product });
+//   } catch (error) {
+//     console.error(
+//       "[Backend] Error assigning product to sub-dealer:",
+//       error.message
+//     );
+//     res.status(500).json({
+//       message: "Failed to assign product to sub-dealer",
+//       error: error.message,
+//     });
+//   }
+// };
 
 // Dealer Sale (New)
 export const createDealerSale = async (req, res) => {
@@ -186,7 +187,7 @@ export const createDealerSale = async (req, res) => {
       $or: [{ barcode: code }, { serialNumber: code }],
       assignedTo: dealerId,
       isAssigned: true,
-
+      assignedToSubDealer: null,
       isAssignedToSubDealer: false,
       isReplaced: false,
     });
@@ -270,6 +271,171 @@ export const getDealerSales = async (req, res) => {
     res
       .status(500)
       .json({ message: "Failed to fetch dealer sales", error: error.message });
+  }
+};
+
+//admin replace product :
+export const adminReplaceProduct = async (req, res) => {
+  try {
+    const { saleId } = req.params;
+    const { code } = req.body;
+    const adminId = req.adminId;
+
+    if (!code) {
+      return res.status(400).json({
+        message: "No barcode or serial number provided for replacement",
+      });
+    }
+
+    const sale = await Sale.findById(saleId).populate("productId");
+    if (!sale) {
+      return res.status(404).json({ message: "Sale not found" });
+    }
+
+    const now = new Date();
+    if (new Date(sale.warrantyEndDate) <= now) {
+      return res.status(400).json({ message: "Warranty has expired" });
+    }
+
+    const remainingWarrantyStart = sale.warrantyStartDate;
+    const remainingWarrantyEnd = sale.warrantyEndDate;
+
+    let newProduct = await Product.findOne({
+      $or: [{ barcode: code }, { serialNumber: code }],
+      assignedTo: null,
+      isAssigned: false,
+      assignedToSubDealer: null,
+      isAssignedToSubDealer: false,
+      isReplaced: false,
+    });
+
+    if (!newProduct) {
+      return res.status(404).json({
+        message:
+          "Replacement product not found or already assigned/sold/replaced",
+      });
+    }
+
+    // Create replacement record
+    const replacement = new Replacement({
+      originalProductId: sale.productId._id,
+      newProductId: newProduct._id,
+      dealerId: sale.dealerId || null,
+      subDealerId: sale.subDealerId || null,
+      warrantyStartDate: remainingWarrantyStart,
+      warrantyEndDate: remainingWarrantyEnd,
+      replacedDate: new Date(),
+      replacedBy: "admin",
+    });
+    await replacement.save();
+
+    // Create new sale for the replacement product
+    const newSale = new Sale({
+      productId: newProduct._id,
+      dealerId: sale.dealerId || null,
+      subDealerId: sale.subDealerId || null,
+      warrantyStartDate: remainingWarrantyStart,
+      warrantyEndDate: remainingWarrantyEnd,
+      warrantyPeriod: sale.warrantyPeriod,
+      soldBy: sale.soldBy,
+    });
+    await newSale.save();
+
+    // Update the new product
+    await Product.findByIdAndUpdate(newProduct._id, {
+      assignedTo: null,
+      isAssigned: false,
+      assignedToSubDealer: null,
+      isAssignedToSubDealer: false,
+      warrantyStartDate: remainingWarrantyStart,
+      warrantyEndDate: remainingWarrantyEnd,
+      originalDealerId: sale.dealerId || null,
+    });
+
+    // Update the original product
+    await Product.findByIdAndUpdate(sale.productId._id, {
+      assignedTo: null,
+      isAssigned: false,
+      assignedToSubDealer: null,
+      isAssignedToSubDealer: false,
+      warrantyStartDate: null,
+      warrantyEndDate: null,
+      isReplaced: true,
+    });
+
+    // Delete the original sale
+    await Sale.findByIdAndDelete(saleId);
+
+    // Populate the new sale for response
+    const populatedNewSale = await Sale.findById(newSale._id).populate(
+      "productId",
+      "productName barcode serialNumber warranty warrantyUnit"
+    );
+
+    res.status(200).json({
+      message: "Product replaced successfully by admin",
+      sale: populatedNewSale,
+      replacement,
+    });
+  } catch (error) {
+    console.error(
+      "[Backend] Error in admin product replacement:",
+      error.message
+    );
+    res.status(500).json({
+      message: "Failed to replace product",
+      error: error.message,
+    });
+  }
+};
+
+//Get all replacement for admin
+export const getAllReplacements = async (req, res) => {
+  try {
+    const replacements = await Replacement.find()
+      .populate("originalProductId", "productName barcode serialNumber")
+      .populate("newProductId", "productName barcode serialNumber")
+      .populate("dealerId", "firstName lastName")
+      .populate("subDealerId", "firstName lastName")
+      .sort({ replacedDate: -1 });
+
+    const formattedReplacements = replacements.map((replacement) => ({
+      _id: replacement._id,
+      originalSerialNumber:
+        replacement.originalProductId?.serialNumber || "N/A",
+      originalBarcode: replacement.originalProductId?.barcode || "N/A",
+      originalProductName: replacement.originalProductId?.productName || "N/A",
+      newSerialNumber: replacement.newProductId?.serialNumber || "N/A",
+      newBarcode: replacement.newProductId?.barcode || "N/A",
+      newProductName: replacement.newProductId?.productName || "N/A",
+      dealerName: replacement.dealerId
+        ? `${replacement.dealerId.firstName} ${replacement.dealerId.lastName}`
+        : "None",
+      subDealerName: replacement.subDealerId
+        ? `${replacement.subDealerId.firstName} ${replacement.subDealerId.lastName}`
+        : "None",
+      warrantyPeriod: `${
+        replacement.warrantyStartDate && replacement.warrantyEndDate
+          ? `${Math.round(
+              (new Date(replacement.warrantyEndDate) -
+                new Date(replacement.warrantyStartDate)) /
+                (1000 * 60 * 60 * 24)
+            )} days`
+          : "N/A"
+      }`,
+      warrantyStartDate: replacement.warrantyStartDate,
+      warrantyEndDate: replacement.warrantyEndDate,
+      replacedDate: replacement.replacedDate,
+      replacedBy: replacement.replacedBy || "unknown",
+    }));
+
+    res.status(200).json({ replacements: formattedReplacements });
+  } catch (error) {
+    console.error("Error fetching all replacements:", error);
+    res.status(500).json({
+      message: "Failed to fetch replacements",
+      error: error.message,
+    });
   }
 };
 
@@ -543,7 +709,7 @@ export const getAllSales = async (req, res) => {
     const sales = await Sale.find()
       .populate(
         "productId",
-        "productName barcode serialNumber warranty warrantyUnit originalDealerId"
+        "productName barcode serialNumber warranty warrantyUnit originalAssignedDealer"
       )
       .populate("dealerId", "firstName lastName")
       .populate("subDealerId", "firstName lastName")

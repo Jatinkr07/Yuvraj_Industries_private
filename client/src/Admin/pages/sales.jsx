@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Table, Button, Select, DatePicker, Space, Input, message } from "antd";
+import { Table, Button, Select, DatePicker, Space, message } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
@@ -10,6 +10,7 @@ import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import axios from "axios";
 import { API_URL } from "../../Services/api";
+import Bracode from "./BarCode/Barcode";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -20,8 +21,9 @@ const Sales = () => {
   const [selectedDateRange, setSelectedDateRange] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState("");
   const [dealerProduct, setDealerProduct] = useState("");
-  const [replacementCode, setReplacementCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [currentSaleId, setCurrentSaleId] = useState(null);
 
   useEffect(() => {
     fetchSalesData();
@@ -30,7 +32,9 @@ const Sales = () => {
   const fetchSalesData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/api/sale/v1/sales/all`);
+      const response = await axios.get(`${API_URL}/api/sale/v1/sales/all`, {
+        withCredentials: true,
+      });
       setSalesData(response.data.sales || []);
       setFilteredData(response.data.sales || []);
     } catch (error) {
@@ -59,11 +63,7 @@ const Sales = () => {
       dataIndex: "subDealerName",
       key: "subDealerName",
     },
-    {
-      title: "Warranty Period",
-      dataIndex: "warrantyPeriod",
-      key: "warrantyPeriod",
-    },
+    { title: "Warranty", dataIndex: "warrantyPeriod", key: "warrantyPeriod" },
     {
       title: "Warranty Left",
       dataIndex: "warrantyLeft",
@@ -76,6 +76,18 @@ const Sales = () => {
         ),
     },
     {
+      title: "Warranty Status",
+      dataIndex: "warrantyStatus",
+      key: "warrantyStatus",
+      render: (text) => (
+        <span
+          className={text === "Expired" ? "text-red-500" : "text-green-500"}
+        >
+          {text}
+        </span>
+      ),
+    },
+    {
       title: "Status",
       dataIndex: "status",
       key: "status",
@@ -86,14 +98,17 @@ const Sales = () => {
       ),
     },
     {
-      title: "Replaced",
-      dataIndex: "replaced",
-      key: "replaced",
+      title: "Replace",
+      dataIndex: "replace",
+      key: "replace",
       render: (text, record) => (
         <Button
           type="primary"
           disabled={record.warrantyLeft === "Expired"}
-          onClick={() => handleReplace(record)}
+          onClick={() => {
+            setCurrentSaleId(record.saleId);
+            setIsScannerOpen(true);
+          }}
         >
           Replace
         </Button>
@@ -129,21 +144,18 @@ const Sales = () => {
 
   const filterData = (dates, product, dealer) => {
     let filtered = salesData || [];
-
     if (dates && dates.length === 2) {
       filtered = filtered.filter((item) => {
         const itemDate = new Date(item.warrantyStartDate);
         return itemDate >= dates[0] && itemDate <= dates[1];
       });
     }
-
     if (product) {
       filtered = filtered.filter((item) => item.productName === product);
     }
     if (dealer) {
       filtered = filtered.filter((item) => item.dealerName === dealer);
     }
-
     setFilteredData(filtered);
   };
 
@@ -151,31 +163,25 @@ const Sales = () => {
     const now = new Date();
     const warrantyEnd = new Date(endDate);
     if (warrantyEnd < now) return "Expired";
-
     const diffMs = warrantyEnd - now;
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const years = Math.floor(diffDays / 365);
     const months = Math.floor((diffDays % 365) / 30);
     const days = diffDays % 30;
-
     return `${years > 0 ? years + " Year" + (years > 1 ? "s" : "") + " " : ""}${
       months > 0 ? months + " Month" + (months > 1 ? "s" : "") + " " : ""
     }${days > 0 ? days + " Day" + (days > 1 ? "s" : "") : ""}`.trim();
   };
 
-  const handleReplace = async (record) => {
-    if (!replacementCode) {
-      message.error("Please scan or enter a replacement barcode/serial number");
-      return;
-    }
-
+  const handleReplaceScanSuccess = async (scannedCode) => {
     try {
       setLoading(true);
-      const response = await axios.post(`/api/sales/replace/${record.saleId}`, {
-        code: replacementCode,
-      });
+      const response = await axios.post(
+        `${API_URL}/api/sale/v1/sales/replace/admin/${currentSaleId}`,
+        { code: scannedCode },
+        { withCredentials: true }
+      );
       message.success(response.data.message);
-      setReplacementCode("");
       fetchSalesData();
     } catch (error) {
       message.error(
@@ -183,6 +189,8 @@ const Sales = () => {
       );
     } finally {
       setLoading(false);
+      setIsScannerOpen(false);
+      setCurrentSaleId(null);
     }
   };
 
@@ -253,13 +261,6 @@ const Sales = () => {
                 </Option>
               ))}
           </Select>
-          <Input
-            placeholder="Scan or enter replacement barcode/serial number"
-            value={replacementCode}
-            onChange={(e) => setReplacementCode(e.target.value)}
-            prefix={<QrcodeOutlined />}
-            style={{ width: 300 }}
-          />
         </Space>
 
         <div className="overflow-x-auto">
@@ -269,6 +270,10 @@ const Sales = () => {
               ...item,
               sNo: index + 1,
               warrantyLeft: calculateWarrantyLeft(item.warrantyEndDate),
+              warrantyStatus:
+                calculateWarrantyLeft(item.warrantyEndDate) === "Expired"
+                  ? "Expired"
+                  : "Not Expired",
               status:
                 calculateWarrantyLeft(item.warrantyEndDate) === "Expired"
                   ? "Expired"
@@ -280,6 +285,12 @@ const Sales = () => {
             rowClassName={rowClassName}
           />
         </div>
+
+        <Bracode
+          isOpen={isScannerOpen}
+          onClose={() => setIsScannerOpen(false)}
+          onScanSuccess={handleReplaceScanSuccess}
+        />
       </div>
     </div>
   );
