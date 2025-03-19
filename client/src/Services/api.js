@@ -81,7 +81,9 @@ export const updateSubDealer = (id, data) =>
 
 // Dealer Product API Calls
 export const assignProductToDealer = async (data) => {
-  const response = await api.post("/api/products/assign", data);
+  const response = await api.post("/api/products/dealer/manual-assign", data, {
+    headers: { "Content-Type": "application/json" },
+  });
 
   return response.data;
 };

@@ -35,8 +35,9 @@ const Sales = () => {
       const response = await axios.get(`${API_URL}/api/sale/v1/sales/all`, {
         withCredentials: true,
       });
-      setSalesData(response.data.sales || []);
-      setFilteredData(response.data.sales || []);
+      const sales = response.data.sales || [];
+      setSalesData(sales);
+      setFilteredData(sales);
     } catch (error) {
       message.error("Failed to fetch sales data", error);
       setSalesData([]);
@@ -143,7 +144,7 @@ const Sales = () => {
   };
 
   const filterData = (dates, product, dealer) => {
-    let filtered = salesData || [];
+    let filtered = [...salesData];
     if (dates && dates.length === 2) {
       filtered = filtered.filter((item) => {
         const itemDate = new Date(item.warrantyStartDate);
@@ -205,7 +206,9 @@ const Sales = () => {
     const doc = new jsPDF();
     doc.autoTable({
       head: [columns.map((col) => col.title)],
-      body: filteredData.map((row) => columns.map((col) => row[col.dataIndex])),
+      body: filteredData.map((row) =>
+        columns.map((col) => row[col.dataIndex] || "N/A")
+      ),
     });
     doc.save("SalesData.pdf");
   };
@@ -239,13 +242,13 @@ const Sales = () => {
             onChange={handleProductChange}
             disabled={loading || !salesData.length}
           >
-            {[
-              ...new Set((salesData || []).map((item) => item.productName)),
-            ].map((product) => (
-              <Option key={product} value={product}>
-                {product}
-              </Option>
-            ))}
+            {[...new Set(salesData.map((item) => item.productName))].map(
+              (product) => (
+                <Option key={product} value={product}>
+                  {product}
+                </Option>
+              )
+            )}
           </Select>
           <Select
             placeholder="Select Dealer"
@@ -253,7 +256,7 @@ const Sales = () => {
             onChange={handleDealerChange}
             disabled={loading || !salesData.length}
           >
-            {[...new Set((salesData || []).map((item) => item.dealerName))]
+            {[...new Set(salesData.map((item) => item.dealerName))]
               .filter(Boolean)
               .map((dealer) => (
                 <Option key={dealer} value={dealer}>
@@ -266,7 +269,7 @@ const Sales = () => {
         <div className="overflow-x-auto">
           <Table
             columns={columns}
-            dataSource={(filteredData || []).map((item, index) => ({
+            dataSource={filteredData.map((item, index) => ({
               ...item,
               sNo: index + 1,
               warrantyLeft: calculateWarrantyLeft(item.warrantyEndDate),
@@ -283,6 +286,7 @@ const Sales = () => {
             scroll={{ x: 1500, y: 500 }}
             loading={loading}
             rowClassName={rowClassName}
+            rowKey="saleId"
           />
         </div>
 

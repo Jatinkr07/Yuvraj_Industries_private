@@ -21,7 +21,6 @@ import {
   getProducts,
   updateProduct,
   deleteProduct,
-  assignProductToDealer,
   bulkAssignProductsToDealer,
   getDealersAll,
 } from "../../Services/api.js";
@@ -192,22 +191,22 @@ const Products = () => {
     });
   };
 
-  const handleAssignDealer = async (productId, dealerId) => {
-    try {
-      const product = products.find((p) => p._id === productId);
-      await assignProductToDealer({
-        code: product.serialNumber,
-        dealerId: dealerId || null,
-      });
-      message.success(
-        dealerId ? "Product assigned successfully" : "Dealer assignment removed"
-      );
-      fetchProducts();
-    } catch (error) {
-      message.error("Failed to assign product to dealer");
-      console.error("Error assigning dealer:", error);
-    }
-  };
+  // const handleAssignDealer = async (productId, dealerId) => {
+  //   try {
+  //     const product = products.find((p) => p._id === productId);
+  //     await assignProductToDealer({
+  //       code: product.serialNumber,
+  //       dealerId: dealerId || null,
+  //     });
+  //     message.success(
+  //       dealerId ? "Product assigned successfully" : "Dealer assignment removed"
+  //     );
+  //     fetchProducts();
+  //   } catch (error) {
+  //     message.error("Failed to assign product to dealer");
+  //     console.error("Error assigning dealer:", error);
+  //   }
+  // };
 
   const handleBulkAssign = async (dealerId) => {
     try {
@@ -394,27 +393,27 @@ const Products = () => {
       key: "subcategory",
       width: 120,
     },
-    {
-      title: "Dealer",
-      key: "dealer",
-      width: 200,
-      render: (_, record) => (
-        <Select
-          style={{ width: 180 }}
-          placeholder="Assign Dealer"
-          value={record.assignedTo?._id || record.assignedTo}
-          onChange={(value) => handleAssignDealer(record._id, value)}
-          allowClear
-          loading={!dealers.length}
-        >
-          {dealers.map((dealer) => (
-            <Select.Option key={dealer._id} value={dealer._id}>
-              {`${dealer.firstName} ${dealer.lastName}`}
-            </Select.Option>
-          ))}
-        </Select>
-      ),
-    },
+    // {
+    //   title: "Dealer",
+    //   key: "dealer",
+    //   width: 200,
+    //   render: (_, record) => (
+    //     <Select
+    //       style={{ width: 180 }}
+    //       placeholder="Assign Dealer"
+    //       value={record.assignedTo?._id || record.assignedTo}
+    //       onChange={(value) => handleAssignDealer(record._id, value)}
+    //       allowClear
+    //       loading={!dealers.length}
+    //     >
+    //       {dealers.map((dealer) => (
+    //         <Select.Option key={dealer._id} value={dealer._id}>
+    //           {`${dealer.firstName} ${dealer.lastName}`}
+    //         </Select.Option>
+    //       ))}
+    //     </Select>
+    //   ),
+    // },
     {
       title: "Added On",
       dataIndex: "createdAt",

@@ -9,33 +9,22 @@ export const createSale = async (req, res) => {
     const { code } = req.body;
     const subDealerId = req.subDealerId;
 
-    console.log("Creating Sub-Dealer Sale - Code:", code);
-    console.log("SubDealer ID:", subDealerId);
-
-    if (!code) {
+    if (!code)
       return res
         .status(400)
         .json({ message: "No barcode or serial number provided" });
-    }
 
-    let product = await Product.findOne({
+    const product = await Product.findOne({
       $or: [{ barcode: code }, { serialNumber: code }],
       assignedToSubDealer: subDealerId,
       isAssignedToSubDealer: true,
+      isReplaced: false,
     });
 
-    if (!product) {
+    if (!product)
       return res
         .status(404)
-        .json({ message: "Product not found or not assigned to you." });
-    }
-
-    console.log(
-      "Product Warranty:",
-      product.warranty,
-      "Unit:",
-      product.warrantyUnit
-    );
+        .json({ message: "Product not found or not assigned to you" });
 
     const warrantyStartDate = new Date();
     const warrantyEndDate = calculateWarrantyEndDate(
@@ -56,18 +45,18 @@ export const createSale = async (req, res) => {
     });
     await sale.save();
 
+    // Remove product from sub-dealer's inventory
     await Product.findByIdAndUpdate(product._id, {
       assignedToSubDealer: null,
       isAssignedToSubDealer: false,
-      assignedToSubDealerAt: null,
       warrantyStartDate,
       warrantyEndDate,
     });
 
-    console.log("Sub-Dealer Sale Created:", sale);
-    res.status(201).json({ message: "Sale created successfully", sale });
+    res
+      .status(201)
+      .json({ message: "Sub-dealer sale created successfully", sale });
   } catch (error) {
-    console.error("[Backend] Error creating sub-dealer sale:", error.message);
     res
       .status(500)
       .json({ message: "Failed to create sale", error: error.message });
@@ -174,14 +163,10 @@ export const createDealerSale = async (req, res) => {
     const { code } = req.body;
     const dealerId = req.dealerId;
 
-    console.log("Creating Dealer Sale - Code:", code);
-    console.log("Dealer ID:", dealerId);
-
-    if (!code) {
+    if (!code)
       return res
         .status(400)
         .json({ message: "No barcode or serial number provided" });
-    }
 
     const product = await Product.findOne({
       $or: [{ barcode: code }, { serialNumber: code }],
@@ -192,14 +177,10 @@ export const createDealerSale = async (req, res) => {
       isReplaced: false,
     });
 
-    if (!product) {
-      return res.status(404).json({
-        message:
-          "Product not found, not assigned to you, or already sold/replaced",
-      });
-    }
-
-    console.log("PRODUCT ---->", product);
+    if (!product)
+      return res
+        .status(404)
+        .json({ message: "Product not found or not assigned to you" });
 
     const warrantyStartDate = new Date();
     const warrantyEndDate = calculateWarrantyEndDate(
@@ -219,15 +200,15 @@ export const createDealerSale = async (req, res) => {
     });
     await sale.save();
 
-    product.assignedTo = null;
-    product.isAssigned = false;
-    product.warrantyStartDate = warrantyStartDate;
-    product.warrantyEndDate = warrantyEndDate;
-    await product.save();
+    await Product.findByIdAndUpdate(product._id, {
+      assignedTo: null,
+      isAssigned: false,
+      warrantyStartDate,
+      warrantyEndDate,
+    });
 
     res.status(201).json({ message: "Dealer sale created successfully", sale });
   } catch (error) {
-    console.error("[Backend] Error creating dealer sale:", error.message);
     res
       .status(500)
       .json({ message: "Failed to create dealer sale", error: error.message });
@@ -446,11 +427,10 @@ export const replaceProduct = async (req, res) => {
     const { code } = req.body;
     const subDealerId = req.subDealerId;
 
-    if (!code) {
-      return res.status(400).json({
-        message: "No barcode or serial number provided for replacement",
-      });
-    }
+    if (!code)
+      return res
+        .status(400)
+        .json({ message: "No barcode or serial number provided" });
 
     const sale = await Sale.findById(saleId).populate("productId");
     if (!sale || sale.subDealerId?.toString() !== subDealerId) {
@@ -459,83 +439,61 @@ export const replaceProduct = async (req, res) => {
         .json({ message: "Sale not found or unauthorized" });
     }
 
-    const now = new Date();
-    if (new Date(sale.warrantyEndDate) <= now) {
+    if (new Date(sale.warrantyEndDate) <= new Date()) {
       return res.status(400).json({ message: "Warranty has expired" });
     }
 
-    const remainingWarrantyStart = sale.warrantyStartDate;
-    const remainingWarrantyEnd = sale.warrantyEndDate;
-
-    let newProduct = await Product.findOne({
+    const newProduct = await Product.findOne({
       $or: [{ barcode: code }, { serialNumber: code }],
       assignedToSubDealer: subDealerId,
       isAssignedToSubDealer: true,
       isReplaced: false,
     });
 
-    if (!newProduct) {
-      return res.status(404).json({
-        message: "Replacement product not found or not assigned to you",
-      });
-    }
+    if (!newProduct)
+      return res.status(404).json({ message: "Replacement product not found" });
 
-    // Create replacement record
+    // Record the replacement
     const replacement = new Replacement({
       originalProductId: sale.productId._id,
       newProductId: newProduct._id,
       subDealerId,
-      warrantyStartDate: remainingWarrantyStart,
-      warrantyEndDate: remainingWarrantyEnd,
+      warrantyStartDate: sale.warrantyStartDate,
+      warrantyEndDate: sale.warrantyEndDate,
       replacedDate: new Date(),
     });
     await replacement.save();
 
-    // Create new sale for the replacement product
+    // Create new sale with the replacement product using remaining warranty
     const newSale = new Sale({
       productId: newProduct._id,
+      dealerId: sale.dealerId,
       subDealerId,
-      warrantyStartDate: remainingWarrantyStart,
-      warrantyEndDate: remainingWarrantyEnd,
+      warrantyStartDate: sale.warrantyStartDate,
+      warrantyEndDate: sale.warrantyEndDate,
       warrantyPeriod: sale.warrantyPeriod,
       soldBy: "subDealer",
     });
     await newSale.save();
 
-    // Update the new product: Mark it as sold, not assigned
+    // Remove new product from sub-dealer's inventory
     await Product.findByIdAndUpdate(newProduct._id, {
       assignedToSubDealer: null,
       isAssignedToSubDealer: false,
-      assignedToSubDealerAt: null,
-      warrantyStartDate: remainingWarrantyStart,
-      warrantyEndDate: remainingWarrantyEnd,
+      warrantyStartDate: sale.warrantyStartDate,
+      warrantyEndDate: sale.warrantyEndDate,
     });
 
-    // Update the original product: Mark it as replaced
-    await Product.findByIdAndUpdate(sale.productId._id, {
-      assignedToSubDealer: null,
-      isAssignedToSubDealer: false,
-      assignedToSubDealerAt: null,
-      warrantyStartDate: null,
-      warrantyEndDate: null,
-      isReplaced: true,
-    });
+    // Mark original product as replaced
+    await Product.findByIdAndUpdate(sale.productId._id, { isReplaced: true });
 
-    // Delete the original sale
+    // Delete the old sale
     await Sale.findByIdAndDelete(saleId);
 
-    // Populate the new sale for the response
-    const populatedNewSale = await Sale.findById(newSale._id).populate(
-      "productId",
-      "productName barcode serialNumber warranty warrantyUnit"
-    );
-
-    res.status(200).json({
-      message: "Product replaced successfully with remaining warranty",
-      sale: populatedNewSale,
-    });
+    res
+      .status(200)
+      .json({ message: "Product replaced successfully", replacement });
   } catch (error) {
-    console.error("Error replacing product:", error.message);
     res
       .status(500)
       .json({ message: "Failed to replace product", error: error.message });
@@ -549,13 +507,10 @@ export const replaceDealerProduct = async (req, res) => {
     const { code } = req.body;
     const dealerId = req.dealerId;
 
-    console.log("Replacing Product (Dealer) - Sale ID:", saleId, "Code:", code);
-
-    if (!code) {
-      return res.status(400).json({
-        message: "No barcode or serial number provided for replacement",
-      });
-    }
+    if (!code)
+      return res
+        .status(400)
+        .json({ message: "No barcode or serial number provided" });
 
     const sale = await Sale.findById(saleId).populate("productId");
     if (
@@ -563,20 +518,16 @@ export const replaceDealerProduct = async (req, res) => {
       sale.dealerId?.toString() !== dealerId ||
       sale.soldBy !== "dealer"
     ) {
-      return res.status(404).json({
-        message: "Sale not found, unauthorized, or sold by sub-dealer",
-      });
+      return res
+        .status(404)
+        .json({ message: "Sale not found or unauthorized" });
     }
 
-    const now = new Date();
-    if (new Date(sale.warrantyEndDate) <= now) {
+    if (new Date(sale.warrantyEndDate) <= new Date()) {
       return res.status(400).json({ message: "Warranty has expired" });
     }
 
-    const remainingWarrantyStart = sale.warrantyStartDate;
-    const remainingWarrantyEnd = sale.warrantyEndDate;
-
-    let newProduct = await Product.findOne({
+    const newProduct = await Product.findOne({
       $or: [{ barcode: code }, { serialNumber: code }],
       assignedTo: dealerId,
       isAssigned: true,
@@ -585,60 +536,49 @@ export const replaceDealerProduct = async (req, res) => {
       isReplaced: false,
     });
 
-    if (!newProduct) {
-      return res.status(404).json({
-        message:
-          "Replacement product not found, not assigned to you, or already sold/replaced",
-      });
-    }
+    if (!newProduct)
+      return res.status(404).json({ message: "Replacement product not found" });
 
+    // Record the replacement
     const replacement = new Replacement({
       originalProductId: sale.productId._id,
       newProductId: newProduct._id,
       dealerId,
-      warrantyStartDate: remainingWarrantyStart,
-      warrantyEndDate: remainingWarrantyEnd,
+      warrantyStartDate: sale.warrantyStartDate,
+      warrantyEndDate: sale.warrantyEndDate,
       replacedDate: new Date(),
     });
     await replacement.save();
 
+    // Create new sale with the replacement product using remaining warranty
     const newSale = new Sale({
       productId: newProduct._id,
       dealerId,
-      warrantyStartDate: remainingWarrantyStart,
-      warrantyEndDate: remainingWarrantyEnd,
+      warrantyStartDate: sale.warrantyStartDate,
+      warrantyEndDate: sale.warrantyEndDate,
       warrantyPeriod: sale.warrantyPeriod,
       soldBy: "dealer",
     });
     await newSale.save();
 
-    // Update the new product to reflect it has been sold (remove from assignable pool)
+    // Remove new product from dealer's inventory
     await Product.findByIdAndUpdate(newProduct._id, {
       assignedTo: null,
       isAssigned: false,
-      warrantyStartDate: remainingWarrantyStart,
-      warrantyEndDate: remainingWarrantyEnd,
+      warrantyStartDate: sale.warrantyStartDate,
+      warrantyEndDate: sale.warrantyEndDate,
     });
 
-    // Update the original product to reflect it has been replaced
-    await Product.findByIdAndUpdate(sale.productId._id, {
-      assignedTo: null,
-      isAssigned: false,
-      warrantyStartDate: null,
-      warrantyEndDate: null,
-      isReplaced: true,
-    });
+    // Mark original product as replaced
+    await Product.findByIdAndUpdate(sale.productId._id, { isReplaced: true });
 
-    // Delete the original sale
+    // Delete the old sale
     await Sale.findByIdAndDelete(saleId);
 
-    res.status(200).json({
-      message:
-        "Product replaced and new sale created for dealer with remaining warranty",
-      replacement,
-    });
+    res
+      .status(200)
+      .json({ message: "Product replaced successfully", replacement });
   } catch (error) {
-    console.error("[Backend] Error replacing dealer product:", error.message);
     res
       .status(500)
       .json({ message: "Failed to replace product", error: error.message });
@@ -709,7 +649,7 @@ export const getAllSales = async (req, res) => {
     const sales = await Sale.find()
       .populate(
         "productId",
-        "productName barcode serialNumber warranty warrantyUnit originalAssignedDealer"
+        "productName barcode serialNumber originalAssignedDealer"
       )
       .populate("dealerId", "firstName lastName")
       .populate("subDealerId", "firstName lastName")
@@ -720,20 +660,23 @@ export const getAllSales = async (req, res) => {
         let dealerName = "None";
         let subDealerName = "None";
 
-        if (sale.soldBy === "dealer" && sale.dealerId) {
-          // Dealer sold directly
-          dealerName = `${sale.dealerId.firstName} ${sale.dealerId.lastName}`;
-        } else if (sale.soldBy === "subDealer" && sale.subDealerId) {
-          // Sub-dealer sold the product
-          subDealerName = `${sale.subDealerId.firstName} ${sale.subDealerId.lastName}`;
-          // Get the dealer who originally assigned the product
-          const product = sale.productId;
-          if (product && product.originalDealerId) {
-            const dealer = await Dealer.findById(product.originalDealerId);
-            if (dealer) {
-              dealerName = `${dealer.firstName} ${dealer.lastName}`;
-            }
+        // Get the original assigned dealer from the product
+        const originalDealerId = sale.productId?.originalAssignedDealer;
+        if (originalDealerId) {
+          const originalDealer = await Dealer.findById(originalDealerId).select(
+            "firstName lastName"
+          );
+          if (originalDealer) {
+            dealerName = `${originalDealer.firstName} ${originalDealer.lastName}`;
           }
+        }
+
+        // For sub-dealer sales, include sub-dealer name
+        if (sale.soldBy === "subDealer" && sale.subDealerId) {
+          subDealerName = `${sale.subDealerId.firstName} ${sale.subDealerId.lastName}`;
+        } else if (sale.soldBy === "dealer" && sale.dealerId) {
+          // For dealer sales, use the dealerId from the sale
+          dealerName = `${sale.dealerId.firstName} ${sale.dealerId.lastName}`;
         }
 
         return {
@@ -753,7 +696,7 @@ export const getAllSales = async (req, res) => {
 
     res.status(200).json({ sales: formattedSales });
   } catch (error) {
-    console.error("Error fetching all sales:", error);
+    console.error("[getAllSales] Error:", error.message);
     res
       .status(500)
       .json({ message: "Failed to fetch sales", error: error.message });

@@ -119,6 +119,7 @@ export const getSubDealerProducts = async (req, res) => {
     const products = await Product.find({
       assignedToSubDealer: subDealerId,
       isAssignedToSubDealer: true,
+      isReplaced: false,
     })
       .populate("category", "name")
       .sort({ assignedToSubDealerAt: -1 });
