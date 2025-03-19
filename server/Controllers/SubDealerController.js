@@ -132,3 +132,16 @@ export const getSubDealerProducts = async (req, res) => {
     });
   }
 };
+
+// New endpoint in your backend
+export const getAllSubDealers = async (req, res) => {
+  try {
+    const subDealers = await SubDealer.find().select("-password");
+    res.status(200).json(subDealers);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching all sub-dealers",
+      error: error.message,
+    });
+  }
+};

@@ -20,7 +20,7 @@ const Sales = () => {
   const [filteredData, setFilteredData] = useState([]);
   const [selectedDateRange, setSelectedDateRange] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState("");
-  const [dealerProduct, setDealerProduct] = useState("");
+  // const [dealerProduct, setDealerProduct] = useState("");
   const [loading, setLoading] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [currentSaleId, setCurrentSaleId] = useState(null);
@@ -130,18 +130,18 @@ const Sales = () => {
 
   const handleDateRangeChange = (dates) => {
     setSelectedDateRange(dates);
-    filterData(dates, selectedProduct, dealerProduct);
+    filterData(dates, selectedProduct);
   };
 
   const handleProductChange = (value) => {
     setSelectedProduct(value);
-    filterData(selectedDateRange, value, dealerProduct);
+    filterData(selectedDateRange, value);
   };
 
-  const handleDealerChange = (value) => {
-    setDealerProduct(value);
-    filterData(selectedDateRange, selectedProduct, value);
-  };
+  // const handleDealerChange = (value) => {
+  //   setDealerProduct(value);
+  //   filterData(selectedDateRange, selectedProduct, value);
+  // };
 
   const filterData = (dates, product, dealer) => {
     let filtered = [...salesData];
@@ -249,20 +249,6 @@ const Sales = () => {
                 </Option>
               )
             )}
-          </Select>
-          <Select
-            placeholder="Select Dealer"
-            style={{ width: 200 }}
-            onChange={handleDealerChange}
-            disabled={loading || !salesData.length}
-          >
-            {[...new Set(salesData.map((item) => item.dealerName))]
-              .filter(Boolean)
-              .map((dealer) => (
-                <Option key={dealer} value={dealer}>
-                  {dealer}
-                </Option>
-              ))}
           </Select>
         </Space>
 

@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import Dealer from "../Model/Dealer.js";
 import Product from "../Model/Products.js";
+import mongoose from "mongoose";
 
 export const createDealer = async (req, res) => {
   try {

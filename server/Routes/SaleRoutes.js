@@ -45,6 +45,6 @@ router.post(
   adminReplaceProduct
 );
 
-router.get("/v1/replacements/all", isAuthenticated, getAllReplacements);
+router.get("/v1/replacements/all", getAllReplacements);
 
 export default router;

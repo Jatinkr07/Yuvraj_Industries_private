@@ -8,11 +8,13 @@ import {
   getDealerProducts,
   requestPasswordChange,
   updateDealerPasswordByAdmin,
+  getDealersAll,
 } from "../Controllers/DealerController.js";
 import {
   authenticateSubDealer,
   isAuthenticated,
   isDealerAuthenticated,
+  isSubDealerAuthenticated,
 } from "../Middleware/authMiddleware.js";
 
 import {
@@ -22,6 +24,7 @@ import {
   updateSubDealer,
   deleteSubDealer,
   getSubDealerProducts,
+  getAllSubDealers,
 } from "../Controllers/SubDealerController.js";
 
 const router = express.Router();
@@ -36,6 +39,7 @@ router.get("/products/:dealerId", isAuthenticated, getDealerProducts);
 router.post("/password/request", requestPasswordChange);
 router.put("/password/:id", updateDealerPasswordByAdmin);
 router.get("/v1/list/dealer", isAuthenticated, getDealers);
+router.get("/v1/dealer/all/list", getDealersAll);
 
 //Sub-Dealer
 router.post("/subdealer/create", isDealerAuthenticated, createSubDealer);
@@ -48,5 +52,6 @@ router.delete(
   deleteSubDealer
 );
 router.get("/subdealer/products", authenticateSubDealer, getSubDealerProducts);
+router.get("/v1/subdealer/all/list", getAllSubDealers);
 
 export default router;
