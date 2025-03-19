@@ -19,7 +19,7 @@ const Sales = () => {
   const [salesData, setSalesData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [selectedDateRange, setSelectedDateRange] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState("");
+  const [selectedProducts, setSelectedProducts] = useState([]);
   // const [dealerProduct, setDealerProduct] = useState("");
   const [loading, setLoading] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -130,20 +130,20 @@ const Sales = () => {
 
   const handleDateRangeChange = (dates) => {
     setSelectedDateRange(dates);
-    filterData(dates, selectedProduct);
+    filterData(dates, selectedProducts);
   };
 
-  const handleProductChange = (value) => {
-    setSelectedProduct(value);
-    filterData(selectedDateRange, value);
+  const handleProductChange = (values) => {
+    setSelectedProducts(values);
+    filterData(selectedDateRange, values);
   };
 
   // const handleDealerChange = (value) => {
   //   setDealerProduct(value);
-  //   filterData(selectedDateRange, selectedProduct, value);
+  //   filterData(selectedDateRange, selectedProducts, value);
   // };
 
-  const filterData = (dates, product, dealer) => {
+  const filterData = (dates, products, dealer) => {
     let filtered = [...salesData];
     if (dates && dates.length === 2) {
       filtered = filtered.filter((item) => {
@@ -151,8 +151,8 @@ const Sales = () => {
         return itemDate >= dates[0] && itemDate <= dates[1];
       });
     }
-    if (product) {
-      filtered = filtered.filter((item) => item.productName === product);
+    if (products && products.length > 0) {
+      filtered = filtered.filter((item) => products.includes(item.productName));
     }
     if (dealer) {
       filtered = filtered.filter((item) => item.dealerName === dealer);
@@ -236,23 +236,9 @@ const Sales = () => {
 
         <Space direction="vertical" size="middle" className="mb-6">
           <RangePicker onChange={handleDateRangeChange} />
-          <Select
-            placeholder="Select Product"
-            style={{ width: 200 }}
-            onChange={handleProductChange}
-            disabled={loading || !salesData.length}
-          >
-            {[...new Set(salesData.map((item) => item.productName))].map(
-              (product) => (
-                <Option key={product} value={product}>
-                  {product}
-                </Option>
-              )
-            )}
-          </Select>
         </Space>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto relative">
           <Table
             columns={columns}
             dataSource={filteredData.map((item, index) => ({
@@ -274,6 +260,35 @@ const Sales = () => {
             rowClassName={rowClassName}
             rowKey="saleId"
           />
+          <div
+            style={{
+              position: "absolute",
+              left: "calc(80px + 150px)",
+              bottom: "22px",
+              zIndex: 10,
+            }}
+          >
+            <Select
+              mode="multiple"
+              allowClear
+              placeholder="Select products"
+              value={selectedProducts}
+              onChange={handleProductChange}
+              style={{
+                width: 130,
+                height: 35,
+              }}
+              disabled={loading || !salesData.length}
+            >
+              {[...new Set(salesData.map((item) => item.productName))].map(
+                (product) => (
+                  <Option key={product} value={product}>
+                    {product}
+                  </Option>
+                )
+              )}
+            </Select>
+          </div>
         </div>
 
         <Bracode

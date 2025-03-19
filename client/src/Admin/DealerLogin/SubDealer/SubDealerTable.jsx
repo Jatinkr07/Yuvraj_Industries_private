@@ -1,88 +1,129 @@
 /* eslint-disable no-unused-vars */
-import { useState, useEffect } from "react";
-import { Table, Input, Select, message } from "antd";
+import { useEffect, useState } from "react";
+import { Table, Input, Button, Select, Modal } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
   SearchOutlined,
+  EyeOutlined,
+  ArrowLeftOutlined,
+  LockOutlined,
 } from "@ant-design/icons";
-import ModalForm from "./ModalForm";
-import axios from "axios";
-import Cookies from "js-cookie";
-import { API_URL } from "../../../Services/api";
+import { Link } from "react-router-dom";
+import FormModalSubDealer from "./ModalForm";
 
-const SubDealerTable = () => {
+import { deleteSubDealer, getSubDealers } from "../../../Services/api";
+
+const SubDealers = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [subDealers, setSubDealers] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  const fetchSubDealers = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(
-        `${API_URL}/api/dealer/subdealer/subdealers`,
-        {
-          withCredentials: true,
-        }
-      );
-
-      const data = Array.isArray(response.data) ? response.data : [];
-      if (data.length === 0) {
-        console.log("404 Not Found");
-      }
-      setSubDealers(
-        data.map((dealer, index) => ({
-          key: dealer._id || index,
-          sNo: index + 1,
-          name: `${dealer.firstName || "Unknown"} ${dealer.lastName || ""}`,
-          phoneNumber: dealer.phoneNumber || "N/A",
-          email: dealer.email || "N/A",
-        }))
-      );
-    } catch (error) {
-      message.error(error.message || "Error fetching sub-dealers");
-      console.error("Fetch error:", error);
-      setSubDealers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [editSubDealerData, setEditSubDealerData] = useState(null);
+  const [passwordRequestSubDealer, setPasswordRequestSubDealer] =
+    useState(null);
+  const [showProducts, setShowProducts] = useState(false);
+  const [selectedSubDealer, setSelectedSubDealer] = useState(null);
 
   useEffect(() => {
     fetchSubDealers();
   }, []);
 
-  const handleDelete = async (id) => {
+  const fetchSubDealers = async () => {
     try {
-      const token = Cookies.get("dealerToken");
-      await axios.delete(`http://localhost:5000/api/dealer/subdealer/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      message.success("Sub-dealer deleted successfully");
-      fetchSubDealers();
+      const response = await getSubDealers();
+      const formattedData = response.data.map((subDealer, index) => ({
+        key: subDealer._id,
+        sNo: index + 1,
+        name: `${subDealer.firstName} ${subDealer.lastName}`,
+        phoneNumber: subDealer.phoneNumber,
+        username: subDealer.username,
+        firstName: subDealer.firstName,
+        lastName: subDealer.lastName,
+        password: subDealer.password,
+        passwordChangeRequest: subDealer.passwordChangeRequest,
+      }));
+      setSubDealers(formattedData);
     } catch (error) {
-      message.error("Error deleting sub-dealer");
+      console.error("Error fetching sub-dealers:", error);
     }
   };
 
+  const handleDelete = async (id) => {
+    try {
+      await deleteSubDealer(id);
+      setSubDealers(subDealers.filter((subDealer) => subDealer.key !== id));
+    } catch (error) {
+      console.error("Error deleting sub-dealer:", error.message);
+    }
+  };
+
+  const handleEdit = (record) => {
+    setEditSubDealerData(record);
+    setIsModalOpen(true);
+  };
+
+  const handlePasswordRequest = (record) => {
+    setPasswordRequestSubDealer(record);
+    setIsModalOpen(true);
+  };
+
   const columns = [
-    { title: "S. No.", dataIndex: "sNo", key: "sNo", width: 170 },
+    { title: "S. No.", dataIndex: "sNo", key: "sNo", width: 100 },
     { title: "Name", dataIndex: "name", key: "name" },
     {
       title: "Phone Number",
       dataIndex: "phoneNumber",
       key: "phoneNumber",
-      width: 230,
+      width: 180,
     },
-    { title: "Email ID", dataIndex: "email", key: "email", width: 320 },
+    { title: "Username", dataIndex: "username", key: "username", width: 200 },
+    {
+      title: "Password Status",
+      key: "passwordStatus",
+      width: 150,
+      render: (_, record) => (
+        <span
+          className={
+            record.passwordChangeRequest?.status === "approved"
+              ? "text-green-500"
+              : "text-gray-500"
+          }
+        >
+          {record.passwordChangeRequest?.status || "None"}
+        </span>
+      ),
+    },
+    {
+      title: "Products",
+      dataIndex: "product",
+      key: "product",
+      width: 120,
+      render: (_, record) => (
+        <EyeOutlined
+          className="text-blue-600 text-lg cursor-pointer"
+          onClick={() => {
+            setSelectedSubDealer(record);
+            setShowProducts(true);
+          }}
+        />
+      ),
+    },
     {
       title: "Actions",
       key: "action",
-      width: 220,
+      width: 150,
       render: (_, record) => (
         <div className="flex gap-4">
-          <EditOutlined className="text-blue-600 text-lg cursor-pointer" />
+          <EditOutlined
+            className="text-blue-600 text-lg cursor-pointer"
+            onClick={() => handleEdit(record)}
+          />
+          {record.passwordChangeRequest?.status === "none" && (
+            <LockOutlined
+              className="text-yellow-600 text-lg cursor-pointer"
+              onClick={() => handlePasswordRequest(record)}
+            />
+          )}
           <DeleteOutlined
             className="text-red-500 text-lg cursor-pointer"
             onClick={() => handleDelete(record.key)}
@@ -92,22 +133,44 @@ const SubDealerTable = () => {
     },
   ];
 
+  if (showProducts && selectedSubDealer) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl text-black font-semibold">
+              Products - {selectedSubDealer.name}
+            </h1>
+            <Button
+              type="default"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => setShowProducts(false)}
+              className="text-gray-700 border-gray-400"
+            >
+              Back to Sub-Dealers
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold">Sub-Dealers List</h1>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="px-3 py-2 bg-[#7CB9E8] text-white hover:text-[#7CB9E8] border border-[#7CB9E8] rounded-md hover:bg-white"
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setEditSubDealerData(null);
+              setIsModalOpen(true);
+            }}
+            className="bg-blue-600 hover:bg-blue-700"
           >
-            <PlusOutlined /> Add New
-          </button>
-          <ModalForm
-            visible={isModalOpen}
-            onCancel={() => setIsModalOpen(false)}
-            onSuccess={fetchSubDealers}
-          />
+            Add New
+          </Button>
         </div>
 
         <div className="flex gap-4 mb-6">
@@ -120,23 +183,37 @@ const SubDealerTable = () => {
               { value: "inactive", label: "Inactive" },
             ]}
           />
-          <Input
-            placeholder="Search"
-            suffix={<SearchOutlined />}
-            className="max-w-sm"
-          />
+          <div className="flex-grow">
+            <Input
+              placeholder="Search"
+              suffix={<SearchOutlined />}
+              className="max-w-sm"
+            />
+          </div>
         </div>
 
         <Table
           columns={columns}
           dataSource={subDealers}
-          loading={loading}
           pagination={true}
           scroll={{ x: 1200, y: 500 }}
         />
       </div>
+
+      <FormModalSubDealer
+        visible={isModalOpen}
+        onCancel={() => {
+          setIsModalOpen(false);
+          setPasswordRequestSubDealer(null);
+          setEditSubDealerData(null);
+        }}
+        onSuccess={fetchSubDealers}
+        initialData={editSubDealerData || passwordRequestSubDealer}
+        isPasswordRequest={!!passwordRequestSubDealer}
+        dealerId={passwordRequestSubDealer?.key}
+      />
     </div>
   );
 };
 
-export default SubDealerTable;
+export default SubDealers;

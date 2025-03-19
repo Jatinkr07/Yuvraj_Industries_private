@@ -77,7 +77,21 @@ export const deleteDealer = (id) => api.delete(`/api/dealer/${id}`);
 export const createSubDealer = (data) =>
   api.post("/api/dealer/subdealer/create", data);
 export const updateSubDealer = (id, data) =>
-  api.put(`/api/dealer/subdealer/${id}`, data);
+  axios.put(`${API_URL}/api/dealer/subdealer/subdealer/${id}`, data, {
+    withCredentials: true,
+  });
+
+export const getSubDealers = () =>
+  axios.get(`${API_URL}/api/dealer/subdealer/subdealers`, {
+    withCredentials: true,
+  });
+
+export const deleteSubDealer = (id) =>
+  axios.delete(`${API_URL}/api/dealer/subdealer/subdealer/${id}`, {
+    withCredentials: true,
+  });
+export const requestSubDealerPasswordChange = (data) =>
+  axios.post(`${API_URL}/api/dealer/subdealer/password/request`, data);
 
 // Dealer Product API Calls
 export const assignProductToDealer = async (data) => {
@@ -95,6 +109,12 @@ export const bulkAssignProductsToDealer = async (data) => {
 
 export const getDealersAll = async () => {
   const response = await api.get("/api/dealer/v1/list/dealer");
+  console.log("getDealers response:", response.data);
+  return response.data;
+};
+
+export const getSubDealersAll = async () => {
+  const response = await api.get("/api/dealer/subdealer/subdealers");
   console.log("getDealers response:", response.data);
   return response.data;
 };

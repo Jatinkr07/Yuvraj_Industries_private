@@ -49,6 +49,7 @@ export default function AdminLogin() {
           <Form.Item
             label={<span className="text-gray-700">Username</span>}
             name="username"
+            rules={[{ required: true, message: "Please enter username" }]}
             className="mb-6"
           >
             <Input
@@ -60,6 +61,7 @@ export default function AdminLogin() {
           <Form.Item
             label={<span className="text-gray-700">Password</span>}
             name="password"
+            rules={[{ required: true, message: "Please enter password" }]}
             className="mb-2"
           >
             <Input.Password
@@ -70,7 +72,7 @@ export default function AdminLogin() {
 
           <div className="flex justify-end mb-6">
             <Link
-              href="/forgot-password"
+              to="/admin/forgot-password"
               className="text-gray-600 hover:text-gray-800 text-sm"
             >
               Forgot password?

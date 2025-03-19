@@ -1,8 +1,34 @@
-import { Form, Input } from "antd";
+import { Form, Input, message } from "antd";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { API_URL } from "../../Services/api";
 
 export default function Settings() {
-  const onFinish = (values) => {
-    console.log("Success:", values);
+  const navigate = useNavigate();
+
+  const onFinish = async (values) => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/admin/update-password`,
+        {
+          oldPassword: values["old-password"],
+          newPassword: values["new-password"],
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (response.status === 200) {
+        message.success("Password updated successfully");
+        setTimeout(() => navigate("/admin/login"), 2000);
+      }
+    } catch (error) {
+      message.error(
+        error.response?.data?.message || "Failed to update password"
+      );
+      console.log(error);
+    }
   };
 
   return (
@@ -31,9 +57,10 @@ export default function Settings() {
           <Form.Item
             label={<span className="text-gray-700">Old Password</span>}
             name="old-password"
+            rules={[{ required: true, message: "Please enter old password" }]}
             className="mb-6"
           >
-            <Input
+            <Input.Password
               placeholder="Please Enter Old Password"
               className="h-12 rounded-md bg-gray-50 border-gray-200"
             />
@@ -42,6 +69,10 @@ export default function Settings() {
           <Form.Item
             label={<span className="text-gray-700">New Password</span>}
             name="new-password"
+            rules={[
+              { required: true, message: "Please enter new password" },
+              { min: 8, message: "Password must be at least 8 characters" },
+            ]}
             className="mb-2"
           >
             <Input.Password
@@ -49,15 +80,6 @@ export default function Settings() {
               className="h-12 rounded-md bg-gray-50 border-gray-200"
             />
           </Form.Item>
-
-          {/* <div className="flex justify-end mb-6">
-            <Link
-              href="/forgot-password"
-              className="text-gray-600 hover:text-gray-800 text-sm"
-            >
-              Forgot password?
-            </Link>
-          </div> */}
 
           <Form.Item className="mb-0 flex justify-center">
             <button className="h-12 custom bg-[#7CB9E8] hover:bg-white text-white hover:text-[#7CB9E8] border border-[#7CB9E8] rounded-md text-base font-medium">

@@ -4,13 +4,12 @@ import Product from "../Model/Products.js";
 
 export const createSubDealer = async (req, res) => {
   try {
-    const { firstName, lastName, phoneNumber, email, username, password } =
-      req.body;
+    const { firstName, lastName, phoneNumber, username, password } = req.body;
     const subDealer = new SubDealer({
       firstName,
       lastName,
       phoneNumber,
-      email,
+
       username,
       password,
       createdBy: req.dealerId,
@@ -33,7 +32,18 @@ export const subDealerLogin = async (req, res) => {
       $or: [{ username: identifier }, { phoneNumber: identifier }],
     });
 
-    if (!subDealer || !(await subDealer.comparePassword(password))) {
+    if (!subDealer) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (subDealer.passwordChangeRequest.status === "pending") {
+      return res
+        .status(403)
+        .json({ message: "Password change request pending. Contact dealer." });
+    }
+
+    const isMatch = await subDealer.comparePassword(password);
+    if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
@@ -73,17 +83,31 @@ export const getSubDealers = async (req, res) => {
 export const updateSubDealer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { firstName, lastName, phoneNumber, email } = req.body;
+    const {
+      firstName,
+      lastName,
+      phoneNumber,
+      password,
+      passwordChangeRequest,
+    } = req.body;
 
-    const subDealer = await SubDealer.findOneAndUpdate(
-      { _id: id, createdBy: req.dealerId },
-      { firstName, lastName, phoneNumber, email },
-      { new: true, runValidators: true }
-    );
-
+    const subDealer = await SubDealer.findOne({
+      _id: id,
+      createdBy: req.dealerId,
+    });
     if (!subDealer) {
       return res.status(404).json({ message: "Sub-dealer not found" });
     }
+
+    subDealer.firstName = firstName || subDealer.firstName;
+    subDealer.lastName = lastName || subDealer.lastName;
+    subDealer.phoneNumber = phoneNumber || subDealer.phoneNumber;
+
+    if (password) subDealer.password = password;
+    if (passwordChangeRequest)
+      subDealer.passwordChangeRequest = passwordChangeRequest;
+
+    await subDealer.save();
 
     res
       .status(200)
@@ -143,5 +167,58 @@ export const getAllSubDealers = async (req, res) => {
       message: "Error fetching all sub-dealers",
       error: error.message,
     });
+  }
+};
+
+export const requestSubDealerPasswordChange = async (req, res) => {
+  try {
+    const { username, phoneNumber } = req.body;
+    const subDealer = await SubDealer.findOne({
+      username,
+      phoneNumber,
+    });
+
+    if (!subDealer) {
+      return res.status(404).json({ message: "Sub-dealer not found" });
+    }
+
+    await SubDealer.findByIdAndUpdate(subDealer._id, {
+      passwordChangeRequest: {
+        status: "pending",
+        requestedAt: new Date(),
+      },
+    });
+
+    res.status(200).json({ message: "Password change request submitted" });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error requesting password change",
+      error: error.message,
+    });
+  }
+};
+
+export const updateSubDealerPasswordByDealer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    const subDealer = await SubDealer.findOne({
+      _id: id,
+      createdBy: req.dealerId,
+    });
+    if (!subDealer) {
+      return res.status(404).json({ message: "Sub-dealer not found" });
+    }
+
+    subDealer.password = newPassword;
+    subDealer.passwordChangeRequest = { status: "approved", requestedAt: null };
+    await subDealer.save();
+
+    res.status(200).json({ message: "Password updated successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error updating password", error: error.message });
   }
 };

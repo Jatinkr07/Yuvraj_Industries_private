@@ -31,6 +31,8 @@ import DealerProducts1 from "./Admin/pages/SubDealerData/DealerProducts";
 import ProtectedRoute from "./Admin/context/ProtectedRoute";
 import AdminLogin from "./Admin/components/AdminLogin/AdminLogin";
 import SubDealerProductsPage from "./Admin/SubDealer/Pages/ProductsPage";
+import ForgotPassword from "./Admin/components/forget/ForgetPassword";
+import UnauthenticatedRoute from "./Admin/context/UnauthenticateRoute";
 
 // Lazy-loaded Admin Routes
 const AdminLayout = React.lazy(() => import("./Admin/AdminLayout"));
@@ -183,6 +185,9 @@ const router = createBrowserRouter(
 
       {/* Admin Routes Start */}
       <Route path="/admin/login" element={<AdminLogin />} />
+      <Route element={<UnauthenticatedRoute />}>
+        <Route path="/admin/forgot-password" element={<ForgotPassword />} />
+      </Route>
       <Route path="/admin" element={<ProtectedRoute role="admin" />}>
         <Route element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/dashboard" replace />} />

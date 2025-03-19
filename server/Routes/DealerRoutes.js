@@ -25,6 +25,8 @@ import {
   deleteSubDealer,
   getSubDealerProducts,
   getAllSubDealers,
+  requestSubDealerPasswordChange,
+  updateSubDealerPasswordByDealer,
 } from "../Controllers/SubDealerController.js";
 
 const router = express.Router();
@@ -53,5 +55,11 @@ router.delete(
 );
 router.get("/subdealer/products", authenticateSubDealer, getSubDealerProducts);
 router.get("/v1/subdealer/all/list", getAllSubDealers);
+router.post("/subdealer/password/request", requestSubDealerPasswordChange);
+router.put(
+  "/subdealer/password/:id",
+  isDealerAuthenticated,
+  updateSubDealerPasswordByDealer
+);
 
 export default router;

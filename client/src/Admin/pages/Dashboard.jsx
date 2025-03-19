@@ -5,6 +5,7 @@ import Cards from "../components/dashboard/Cards";
 import SalesTable from "../components/dashboard/SalesTable";
 import AnalyticsChart from "../components/dashboard/AnalyticsChart";
 import { API_URL } from "../../Services/api";
+import LoaderUI from "../../Loader/LoaderUI";
 
 const Dashboard = () => {
   const [stats, setStats] = useState([
@@ -139,9 +140,11 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="w-full">
+    <div className="w-full ">
       {loading ? (
-        <div>Loading dashboard data...</div>
+        <div className="flex justify-center items-center py-72">
+          <LoaderUI />
+        </div>
       ) : (
         <>
           <Cards data={stats} />

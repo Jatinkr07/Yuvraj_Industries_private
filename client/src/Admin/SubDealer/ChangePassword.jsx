@@ -1,68 +1,89 @@
-import { Form, Input } from "antd";
+import { Form, Input, Button, message } from "antd";
+import { useNavigate } from "react-router-dom";
+import { requestSubDealerPasswordChange } from "../../Services/api.js";
 
 export default function ChangePassword() {
-  const onFinish = (values) => {
-    console.log("Success:", values);
+  const [form] = Form.useForm();
+  const navigate = useNavigate();
+
+  const onFinish = async (values) => {
+    try {
+      await requestSubDealerPasswordChange({
+        username: values.username,
+        phoneNumber: values.phoneNumber,
+      });
+      message.success(
+        "Password change request submitted. Please contact your dealer for the new password."
+      );
+      form.resetFields();
+      setTimeout(() => navigate("/subdealer/login"), 2000);
+    } catch (error) {
+      console.log(error);
+      message.error(
+        error.response?.data?.message ||
+          "Failed to submit password change request"
+      );
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-[30px] shadow-lg p-8 md:p-10">
-        <div className="flex justify-center mb-8">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
+        <div className="text-center">
           <img
-            src="/logo.jpg"
+            src="https://yuvrajindustries.co/wp-content/uploads/2023/03/yuvraj-industries-logo.png"
             alt="Yuvraj Industries Logo"
             width={120}
             height={80}
-            className="object-contain"
+            className="mx-auto mb-4"
           />
+          <h2 className="text-3xl font-bold text-gray-900">
+            Password Change Request
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Submit request to reset your password
+          </p>
         </div>
 
-        <h1 className="text-2xl font-semibold text-center mb-8">
-          Change Password
-        </h1>
-
         <Form
-          name="dealer-change-password"
+          form={form}
+          name="subdealer-change-password"
           onFinish={onFinish}
           layout="vertical"
-          className="space-y-4"
+          className="space-y-6"
         >
           <Form.Item
-            label={<span className="text-gray-700">Old Password</span>}
-            name="old-password"
-            className="mb-6"
+            label="Username"
+            name="username"
+            rules={[{ required: true, message: "Please enter your username" }]}
           >
             <Input
-              placeholder="Please Enter Old Password"
-              className="h-12 rounded-md bg-gray-50 border-gray-200"
+              placeholder="Enter Username"
+              className="h-12 rounded-md border-gray-300"
             />
           </Form.Item>
 
           <Form.Item
-            label={<span className="text-gray-700">New Password</span>}
-            name="new-password"
-            className="mb-2"
+            label="Phone Number"
+            name="phoneNumber"
+            rules={[
+              { required: true, message: "Please enter your phone number" },
+            ]}
           >
-            <Input.Password
-              placeholder="Please Enter New Password"
-              className="h-12 rounded-md bg-gray-50 border-gray-200"
+            <Input
+              placeholder="Enter Phone Number"
+              className="h-12 rounded-md border-gray-300"
             />
           </Form.Item>
 
-          {/* <div className="flex justify-end mb-6">
-            <Link
-              href="/forgot-password"
-              className="text-gray-600 hover:text-gray-800 text-sm"
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 rounded-md text-white font-medium"
             >
-              Forgot password?
-            </Link>
-          </div> */}
-
-          <Form.Item className="mb-0 flex justify-center">
-            <button className="h-12 custom bg-[#7CB9E8] hover:bg-white text-white hover:text-[#7CB9E8] border border-[#7CB9E8] rounded-md text-base font-medium">
-              Update
-            </button>
+              Request Password Change
+            </Button>
           </Form.Item>
         </Form>
       </div>
