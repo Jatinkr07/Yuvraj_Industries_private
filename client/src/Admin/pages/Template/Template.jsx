@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { Modal, QRCode, Button } from "antd";
 import { DownloadOutlined } from "@ant-design/icons";
-import { toPng } from "html-to-image"; // Updated import
+import { toPng } from "html-to-image";
 
 const ProductTemplate = ({ product, visible, onClose }) => {
   const qrValue = product?.barcode || product?.serialNumber || "N/A";
@@ -113,7 +113,9 @@ const ProductTemplate = ({ product, visible, onClose }) => {
             >
               <span className="text-sm lg:text-base">KW / HP:</span>
               <span className="font-bold text-xl lg:text-2xl">
-                {product?.power || "N/A"}
+                {product?.power
+                  ? `${product.power.kw} / ${product.power.hp}`
+                  : "N/A"}
               </span>
             </div>
             <div
@@ -122,7 +124,8 @@ const ProductTemplate = ({ product, visible, onClose }) => {
             >
               <span className="text-sm lg:text-base">Phase</span>
               <span className="font-bold text-xl lg:text-2xl">
-                {product?.maxHead || "N/A"}
+                {product?.phase || "N/A"}{" "}
+                {/* Fixed: Use phase instead of maxHead */}
               </span>
             </div>
             <div
@@ -131,14 +134,15 @@ const ProductTemplate = ({ product, visible, onClose }) => {
             >
               <span className="text-sm lg:text-base">Volts</span>
               <span className="font-bold text-xl lg:text-2xl">
-                {product?.power || "N/A"}
+                {product?.volts || "N/A"}{" "}
+                {/* Fixed: Use volts instead of power */}
               </span>
             </div>
             <div
               className="border-b border-r border-gray-300 p-1 flex justify-between"
               style={{ borderColor: "#D1D5DB" }}
             >
-              <span className="text-sm lg:text-base">OTY : </span>
+              <span className="text-sm lg:text-base">QTY :</span>
               <span className="font-bold text-xl lg:text-2xl">
                 {product?.quantityText || "N/A"}
               </span>

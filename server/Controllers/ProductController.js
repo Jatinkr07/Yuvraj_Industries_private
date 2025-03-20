@@ -64,6 +64,16 @@ export const createProduct = async (req, res) => {
       subcategory,
       subSubcategory,
       quantityText,
+      power, // Expecting "kwValue/hpValue"
+      operatorHeadRange,
+      maxCurrent, // New field
+      capacitor, // New field
+      motor, // New field (will prepend power.hp)
+      dutyPoint, // New field
+      nomHead, // New field
+      nomDis, // New field
+      overallEfficiency, // New field
+      ratedSpeed, // New field
     } = fields;
 
     const existingProduct = await Product.findOne({ serialNumber });
@@ -82,12 +92,18 @@ export const createProduct = async (req, res) => {
       warrantyUnit
     );
 
+    // Split power into KW and HP
+    const [kw, hp] = power.split("/");
+
+    // Prepend power.hp to motor field
+    const motorValue = `${hp} ${motor}`.trim();
+
     const baseProduct = {
       productName: fields.productName,
       category: fields.category,
       subcategory,
       subSubcategory,
-      power: fields.power,
+      power: { kw, hp },
       phase: fields.phase,
       volts: fields.volts,
       stage: fields.stage,
@@ -99,6 +115,15 @@ export const createProduct = async (req, res) => {
       description: fields.description,
       images,
       quantityText,
+      operatorHeadRange,
+      maxCurrent, // New field
+      capacitor, // New field
+      motor: motorValue, // New field with power.hp prepended
+      dutyPoint, // New field
+      nomHead, // New field
+      nomDis, // New field
+      overallEfficiency, // New field
+      ratedSpeed, // New field
       addedOn: new Date(),
       assignedTo: null,
       isAssigned: false,
@@ -495,6 +520,14 @@ export const updateProduct = async (req, res) => {
     const { id } = req.params;
     const { fields, files } = await handleFileUpload(req);
     const updateData = { ...fields };
+
+    if (fields.power) {
+      const [kw, hp] = fields.power.split("/");
+      updateData.power = { kw, hp };
+      if (fields.motor) {
+        updateData.motor = `${hp} ${fields.motor}`.trim();
+      }
+    }
 
     if (files.length > 0) {
       const product = await Product.findById(id);

@@ -24,7 +24,8 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
         ...initialValues,
         category: initialValues.category?._id || initialValues.category,
         subcategory: initialValues.subcategory,
-        subSubcategory: initialValues.subSubcategory, // New field for sub-subcategory
+        subSubcategory: initialValues.subSubcategory,
+        power: `${initialValues.power.kw}/${initialValues.power.hp}`,
         warranty: initialValues.warranty
           ? Math.floor(
               initialValues.warranty /
@@ -36,6 +37,15 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
             )
           : "",
         warrantyUnit: initialValues.warrantyUnit || "days",
+        operatorHeadRange: initialValues.operatorHeadRange,
+        maxCurrent: initialValues.maxCurrent, // New field
+        capacitor: initialValues.capacitor, // New field
+        motor: initialValues.motor.replace(initialValues.power.hp, "").trim(), // Remove HP prefix
+        dutyPoint: initialValues.dutyPoint, // New field
+        nomHead: initialValues.nomHead, // New field
+        nomDis: initialValues.nomDis, // New field
+        overallEfficiency: initialValues.overallEfficiency, // New field
+        ratedSpeed: initialValues.ratedSpeed, // New field
       });
 
       if (initialValues.images && initialValues.images.length > 0) {
@@ -50,7 +60,6 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
         setFileList([]);
       }
 
-      // Populate subcategories and sub-subcategories based on initial category
       if (initialValues.category) {
         const selectedCategory = categories.find(
           (cat) =>
@@ -211,11 +220,31 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
           </Form.Item>
 
           <Form.Item
-            label="KW/HP"
+            label="Power (KW/HP)"
             name="power"
-            rules={[{ required: true, message: "Power is required" }]}
+            rules={[
+              { required: true, message: "Power (KW/HP) is required" },
+              {
+                pattern: /^\d+(\.\d+)?\/\d+(\.\d+)?$/,
+                message: "Enter in format: KW/HP (e.g., 5/6.7)",
+              },
+            ]}
           >
-            <Input placeholder="Enter KW/HP" className="h-12 bg-gray-100" />
+            <Input
+              placeholder="Enter KW/HP (e.g., 5/6.7)"
+              className="h-12 bg-gray-100"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Motor (HP prefixed)"
+            name="motor"
+            rules={[{ required: true, message: "Motor is required" }]}
+          >
+            <Input
+              placeholder="Enter motor details (HP will be prefixed)"
+              className="h-12 bg-gray-100"
+            />
           </Form.Item>
 
           <Form.Item
@@ -259,6 +288,104 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
             rules={[{ required: true, message: "Max Head is required" }]}
           >
             <Input placeholder="Enter max head" className="h-12 bg-gray-100" />
+          </Form.Item>
+
+          <Form.Item
+            label="Operator Head Range"
+            name="operatorHeadRange"
+            rules={[
+              { required: true, message: "Operator Head Range is required" },
+              {
+                pattern: /^\d+(\.\d+)?-\d+(\.\d+)?$/,
+                message: "Enter in format: from-to (e.g., 10-20)",
+              },
+            ]}
+          >
+            <Input
+              placeholder="Enter range (e.g., 10-20)"
+              className="h-12 bg-gray-100"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Max Current"
+            name="maxCurrent"
+            rules={[{ required: true, message: "Max Current is required" }]}
+          >
+            <Input
+              placeholder="Enter max current"
+              className="h-12 bg-gray-100"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Capacitor"
+            name="capacitor"
+            rules={[{ required: true, message: "Capacitor is required" }]}
+          >
+            <Input
+              placeholder="Enter capacitor value"
+              className="h-12 bg-gray-100"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Duty Point"
+            name="dutyPoint"
+            rules={[{ required: true, message: "Duty Point is required" }]}
+          >
+            <Input
+              placeholder="Enter duty point"
+              className="h-12 bg-gray-100"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Nominal Head"
+            name="nomHead"
+            rules={[{ required: true, message: "Nominal Head is required" }]}
+          >
+            <Input
+              placeholder="Enter nominal head"
+              className="h-12 bg-gray-100"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Nominal Discharge"
+            name="nomDis"
+            rules={[
+              { required: true, message: "Nominal Discharge is required" },
+            ]}
+          >
+            <Input
+              placeholder="Enter nominal discharge"
+              className="h-12 bg-gray-100"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Overall Efficiency"
+            name="overallEfficiency"
+            rules={[
+              { required: true, message: "Overall Efficiency is required" },
+            ]}
+          >
+            <Input
+              placeholder="Enter overall efficiency"
+              className="h-12 bg-gray-100"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Rated Speed"
+            name="ratedSpeed"
+            rules={[{ required: true, message: "Rated Speed is required" }]}
+          >
+            <Input
+              placeholder="Enter rated speed"
+              className="h-12 bg-gray-100"
+            />
           </Form.Item>
 
           <Form.Item

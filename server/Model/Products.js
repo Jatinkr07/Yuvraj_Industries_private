@@ -11,7 +11,10 @@ const productSchema = new mongoose.Schema(
     },
     subcategory: { type: String, required: true },
     subSubcategory: { type: String, required: true },
-    power: { type: String, required: true, trim: true },
+    power: {
+      kw: { type: String, required: true, trim: true }, // KW part
+      hp: { type: String, required: true, trim: true }, // HP part
+    },
     volts: { type: String, required: true, trim: true },
     phase: { type: String, required: true, trim: true },
     stage: { type: String, required: true, trim: true },
@@ -53,20 +56,22 @@ const productSchema = new mongoose.Schema(
     isAssignedToSubDealer: { type: Boolean, default: false },
     assignedToSubDealerAt: { type: Date },
     originalDealerId: { type: mongoose.Schema.Types.ObjectId, ref: "Dealer" },
-    isReplaced: {
-      type: Boolean,
-      default: false,
-    },
-    // Added fields
+    isReplaced: { type: Boolean, default: false },
     originalAssignedDealer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Dealer",
       default: null,
     },
-    assignedByAdmin: {
-      type: Boolean,
-      default: false,
-    },
+    assignedByAdmin: { type: Boolean, default: false },
+    operatorHeadRange: { type: String, required: true, trim: true },
+    maxCurrent: { type: String, required: true, trim: true },
+    capacitor: { type: String, required: true, trim: true },
+    motor: { type: String, required: true, trim: true },
+    dutyPoint: { type: String, required: true, trim: true },
+    nomHead: { type: String, required: true, trim: true },
+    nomDis: { type: String, required: true, trim: true },
+    overallEfficiency: { type: String, required: true, trim: true },
+    ratedSpeed: { type: String, required: true, trim: true },
   },
   { timestamps: true }
 );
