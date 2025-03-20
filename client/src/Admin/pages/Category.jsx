@@ -133,17 +133,17 @@ const Category = () => {
       width: 80,
     },
     {
-      title: "Category",
+      title: "Brand",
       dataIndex: "categoryName",
       sorter: (a, b) => a.categoryName.localeCompare(b.categoryName),
     },
     {
-      title: "Subcategory",
+      title: "Sub Brand",
       dataIndex: "subcategoryName",
       sorter: (a, b) => a.subcategoryName.localeCompare(b.subcategoryName),
     },
     {
-      title: "Sub-subcategory",
+      title: "Sub-sub Brand",
       dataIndex: "subSubcategoryName",
       sorter: (a, b) =>
         a.subSubcategoryName.localeCompare(b.subSubcategoryName),
@@ -185,7 +185,7 @@ const Category = () => {
     <div className="bg-gray-50 min-h-screen p-6">
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold">Categories List</h1>
+          <h1 className="text-2xl font-semibold">Brand List</h1>
           <Button
             type="primary"
             icon={<PlusOutlined />}

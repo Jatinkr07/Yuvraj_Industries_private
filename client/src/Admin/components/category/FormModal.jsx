@@ -168,7 +168,7 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
 
   return (
     <Modal
-      title={initialData ? "Edit Category" : "Create New Category"}
+      title={initialData ? "Edit Brand" : "Create New Brand"}
       open={isOpen}
       onCancel={onClose}
       footer={null}
@@ -177,14 +177,11 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
         <Form.Item
-          label="Category Name"
+          label="Brand Name"
           name="category"
-          rules={[{ required: true, message: "Category name is required" }]}
+          rules={[{ required: true, message: "Brand name is required" }]}
         >
-          <Input
-            placeholder="Enter Category Name"
-            className="h-12 bg-gray-100"
-          />
+          <Input placeholder="Enter Brand Name" className="h-12 bg-gray-100" />
         </Form.Item>
 
         <Form.Item label="Image (Optional)">
@@ -220,10 +217,10 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
         )}
 
         <div className="mt-4">
-          <h3 className="text-lg font-semibold">Subcategories</h3>
+          <h3 className="text-lg font-semibold">Sub Brand</h3>
           <Space direction="vertical" className="w-full">
             <Input
-              placeholder="Enter Subcategory Name"
+              placeholder="Enter Sub Brand Name"
               value={subcategoryName}
               onChange={(e) => setSubcategoryName(e.target.value)}
               className="h-12 bg-gray-100"
@@ -234,7 +231,7 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
               icon={<PlusOutlined />}
               className="w-full h-12"
             >
-              Add Subcategory
+              Add Sub Brand
             </Button>
           </Space>
           <List
@@ -252,7 +249,7 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
                     type="link"
                     onClick={() => setSelectedSubcategoryIndex(subIndex)}
                   >
-                    Add Sub-subcategory
+                    Add Sub-sub Brand
                   </Button>,
                 ]}
               >
@@ -266,12 +263,11 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
         {selectedSubcategoryIndex !== null && (
           <div className="mt-4">
             <h3 className="text-lg font-semibold">
-              Sub-subcategories for{" "}
-              {subcategories[selectedSubcategoryIndex].name}
+              Sub-sub Brand for {subcategories[selectedSubcategoryIndex].name}
             </h3>
             <Space direction="vertical" className="w-full">
               <Input
-                placeholder="Enter Sub-subcategory Name"
+                placeholder="Enter Sub-sub Brand Name"
                 value={subSubcategoryName}
                 onChange={(e) => setSubSubcategoryName(e.target.value)}
                 className="h-12 bg-gray-100"
@@ -282,7 +278,7 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
                 icon={<PlusOutlined />}
                 className="w-full h-12"
               >
-                Add Sub-subcategory
+                Add Sub-sub Brand
               </Button>
             </Space>
             <List

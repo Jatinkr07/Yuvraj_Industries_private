@@ -10,14 +10,19 @@ export default function ForgotPassword() {
     try {
       const response = await axios.post(
         `${API_URL}/api/admin/forgot-password`,
-        values
+        {
+          email: values.email,
+        },
+        {
+          withCredentials: true,
+        }
       );
       if (response.status === 200) {
-        message.success("Reset request sent successfully");
+        message.success("Credentials sent to your email");
         setTimeout(() => navigate("/admin/login"), 2000);
       }
     } catch (error) {
-      message.error("Failed to send reset request");
+      message.error(error.response?.data?.message || "Failed to send request");
       console.log(error);
     }
   };
@@ -46,18 +51,16 @@ export default function ForgotPassword() {
           className="space-y-4"
         >
           <Form.Item
-            label={<span className="text-gray-700">Email or Phone Number</span>}
-            name="contact"
+            label={<span className="text-gray-700">Email</span>}
+            name="email"
             rules={[
-              {
-                required: true,
-                message: "Please enter your email or phone number",
-              },
+              { required: true, message: "Please enter your email" },
+              { type: "email", message: "Please enter a valid email" },
             ]}
             className="mb-6"
           >
             <Input
-              placeholder="Enter your email or phone number"
+              placeholder="Enter your email"
               className="h-12 rounded-md bg-gray-50 border-gray-200"
             />
           </Form.Item>
