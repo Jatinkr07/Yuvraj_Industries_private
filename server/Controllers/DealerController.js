@@ -58,7 +58,7 @@ export const dealerLogin = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 3600000,
+      maxAge: 3600000 * 36000,
     });
     res.status(200).json({
       message: "Login successful",

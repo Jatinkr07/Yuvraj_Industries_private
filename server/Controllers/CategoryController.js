@@ -160,7 +160,7 @@ export const deleteCategory = async (req, res) => {
 export const getCategories = async (req, res) => {
   try {
     const categories = await Category.find();
-    console.log("Backend - Fetched Categories:", categories);
+
     res.json(categories);
   } catch (error) {
     console.error("Backend - Fetch Error:", error);

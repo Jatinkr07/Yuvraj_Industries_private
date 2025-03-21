@@ -86,6 +86,13 @@ export const getSubDealers = () =>
     withCredentials: true,
   });
 
+export const getSubDealersData = async (dealerId) => {
+  const response = await api.get(
+    `/api/dealer/subdealer/subdealers?dealerId=${dealerId}`
+  );
+  return response.data;
+};
+
 export const deleteSubDealer = (id) =>
   axios.delete(`${API_URL}/api/dealer/subdealer/subdealer/${id}`, {
     withCredentials: true,
@@ -123,6 +130,21 @@ export const getDealerProducts = async (dealerId) => {
   const response = await api.get(
     dealerId ? `/api/dealer/products/${dealerId}` : "/api/dealer/products"
   );
+  return response.data;
+};
+
+export const getSubDealerProducts = async (subDealerId, dealerId) => {
+  const response = await api.get(
+    `/api/dealer/subdealer/${subDealerId}/products${
+      dealerId ? `?dealerId=${dealerId}` : ""
+    }`
+  );
+  return response.data;
+};
+
+export const getDealerProductsAll = async (params) => {
+  console.log("Sending API request with params:", params);
+  const response = await api.get("/api/dealer/products/all", { params });
   return response.data;
 };
 // Sale API Calls

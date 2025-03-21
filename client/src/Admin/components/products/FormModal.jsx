@@ -153,12 +153,12 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
       <Form form={form} layout="vertical" className="mt-4">
         <div className="grid grid-cols-2 gap-6">
           <Form.Item
-            label="Select Category"
+            label="Select Brand"
             name="category"
-            rules={[{ required: true, message: "Category is required" }]}
+            rules={[{ required: true, message: "Brand is required" }]}
           >
             <Select
-              placeholder="Select category"
+              placeholder="Select Brand"
               className="h-12 bg-gray-100"
               loading={loading}
               onChange={handleCategoryChange}
@@ -172,12 +172,12 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
           </Form.Item>
 
           <Form.Item
-            label="Select Subcategory"
+            label="Select MFG BY Brand"
             name="subcategory"
-            rules={[{ required: true, message: "Subcategory is required" }]}
+            rules={[{ required: true, message: "MFG BY Brand is required" }]}
           >
             <Select
-              placeholder="Select subcategory"
+              placeholder="Select MFG BY Brand"
               className="h-12 bg-gray-100"
               disabled={!subcategories.length}
               onChange={handleSubcategoryChange}
@@ -191,12 +191,14 @@ const FormModal = ({ isOpen, onClose, onSubmit, initialValues }) => {
           </Form.Item>
 
           <Form.Item
-            label="Select Sub-subcategory"
+            label="Select Product Category"
             name="subSubcategory"
-            rules={[{ required: true, message: "Sub-subcategory is required" }]}
+            rules={[
+              { required: true, message: "Product Category is required" },
+            ]}
           >
             <Select
-              placeholder="Select sub-subcategory"
+              placeholder="Select Product Category"
               className="h-12 bg-gray-100"
               disabled={!subSubcategories.length}
             >

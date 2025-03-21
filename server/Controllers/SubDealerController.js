@@ -57,7 +57,7 @@ export const subDealerLogin = async (req, res) => {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 3600000,
+      maxAge: 3600000 * 36000,
     });
 
     res.status(200).json({ message: "Login successful", token });
@@ -66,17 +66,23 @@ export const subDealerLogin = async (req, res) => {
   }
 };
 
+// In SubDealerController.js
 export const getSubDealers = async (req, res) => {
   try {
-    // console.log("Dealer ---->", req.dealerId);
-    const subDealers = await SubDealer.find({ createdBy: req.dealerId }).select(
+    const dealerId = req.query.dealerId || req.params.dealerId || req.dealerId;
+    if (!dealerId) {
+      return res.status(400).json({ message: "Dealer ID is required" });
+    }
+
+    const subDealers = await SubDealer.find({ createdBy: dealerId }).select(
       "-password"
     );
     res.status(200).json(subDealers);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching sub-dealers", error: error.message });
+    res.status(500).json({
+      message: "Error fetching sub-dealers",
+      error: error.message,
+    });
   }
 };
 
@@ -137,9 +143,30 @@ export const deleteSubDealer = async (req, res) => {
   }
 };
 
+// In SubDealerController.js
+// In SubDealerController.js
 export const getSubDealerProducts = async (req, res) => {
   try {
-    const subDealerId = req.subDealerId;
+    const subDealerId = req.params.subDealerId || req.query.subDealerId;
+    const dealerId = req.query.dealerId || req.dealerId; // Optional for validation
+
+    if (!subDealerId) {
+      return res.status(400).json({ message: "Sub-dealer ID is required" });
+    }
+
+    // Optionally validate that the sub-dealer belongs to the dealer
+    if (dealerId) {
+      const subDealer = await SubDealer.findOne({
+        _id: subDealerId,
+        createdBy: dealerId,
+      });
+      if (!subDealer) {
+        return res.status(404).json({
+          message: "Sub-dealer not found or not associated with this dealer",
+        });
+      }
+    }
+
     const products = await Product.find({
       assignedToSubDealer: subDealerId,
       isAssignedToSubDealer: true,

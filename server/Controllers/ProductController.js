@@ -2,6 +2,7 @@ import Product from "../Model/Products.js";
 import path from "path";
 import fs from "fs";
 import busboy from "busboy";
+import Category from "../Model/Category.js";
 
 const uploadDir = path.join("uploads", "products");
 
@@ -478,22 +479,28 @@ export const assignProductToSubDealer = async (req, res) => {
 
 export const getProducts = async (req, res) => {
   try {
-    const { page = 1, limit = 50, search = "" } = req.query;
+    const { page = 1, limit = 50, search = "", categoryName } = req.query;
 
-    const query = search
-      ? {
-          $or: [
-            { productName: { $regex: search, $options: "i" } },
-            { serialNumber: { $regex: search, $options: "i" } },
-            { barcode: { $regex: search, $options: "i" } },
-          ],
-        }
-      : {};
+    const query = {};
+    if (search) {
+      query.$or = [
+        { productName: { $regex: search, $options: "i" } },
+        { serialNumber: { $regex: search, $options: "i" } },
+        { barcode: { $regex: search, $options: "i" } },
+      ];
+    }
+    if (categoryName && categoryName !== "all") {
+      const category = await Category.findOne({ name: categoryName });
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      query.category = category._id;
+    }
 
     const [products, total] = await Promise.all([
       Product.find(query)
         .populate("category", "name")
-        .populate("assignedTo", "firstName lastName") // Add this to populate dealer details
+        .populate("assignedTo", "firstName lastName")
         .sort({ addedOn: -1 })
         .skip((page - 1) * limit)
         .limit(parseInt(limit))

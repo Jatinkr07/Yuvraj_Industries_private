@@ -174,7 +174,7 @@ const SubDealers = () => {
         </div>
 
         <div className="flex gap-4 mb-6">
-          <Select
+          {/* <Select
             defaultValue="show_all"
             style={{ width: 120 }}
             options={[
@@ -182,7 +182,7 @@ const SubDealers = () => {
               { value: "active", label: "Active" },
               { value: "inactive", label: "Inactive" },
             ]}
-          />
+          /> */}
           <div className="flex-grow">
             <Input
               placeholder="Search"

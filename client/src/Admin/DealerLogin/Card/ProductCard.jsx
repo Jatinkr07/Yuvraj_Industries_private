@@ -6,7 +6,7 @@ export default function ProductCard({ product }) {
   const {
     productName = "SUBMERSIBLE SET",
     stage = "15",
-    power = "1.5/2",
+    power = { kw: "1.5", hp: "2" },
     pipeSize = "32 mm",
     warranty = "1 year",
     serialNumber = "24517D56",
@@ -23,6 +23,10 @@ export default function ProductCard({ product }) {
     month: "short",
     year: "numeric",
   });
+
+  const powerString = power
+    ? `${power.kw || "N/A"}/${power.hp || "N/A"}`
+    : "N/A";
 
   return (
     <Card className="w-full max-w-md lg:max-w-full  grid grid-cols-1 lg:grid-cols-1 mx-auto border-2 border-black gap-4">
@@ -44,7 +48,7 @@ export default function ProductCard({ product }) {
           </div>
           {[
             { label: "STAGE", value: stage },
-            { label: "KW/HP", value: power },
+            { label: "KW/HP", value: powerString },
             { label: "VOLTS", value: "240V" },
           ].map((item, index) => (
             <div

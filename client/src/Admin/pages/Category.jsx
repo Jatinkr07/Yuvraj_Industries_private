@@ -25,7 +25,7 @@ const Category = () => {
     try {
       const data = await getCategories();
       const formattedData = Array.isArray(data) ? data : [];
-      console.log("Category - Fetched Categories:", formattedData); // Log fetched data
+
       setCategories(formattedData);
       flattenData(formattedData);
     } catch (error) {
@@ -87,7 +87,7 @@ const Category = () => {
         });
       }
     });
-    console.log("Category - Flattened Table Data:", flattened); // Log table data
+
     setTableData(flattened);
   };
 
@@ -95,7 +95,7 @@ const Category = () => {
     try {
       await deleteCategory(categoryId);
       message.success("Category deleted successfully!");
-      fetchCategories(); // Refresh data after delete
+      fetchCategories();
     } catch (error) {
       message.error("Failed to delete category");
       console.error("Category - Delete Error:", error);
@@ -142,12 +142,12 @@ const Category = () => {
       sorter: (a, b) => a.categoryName.localeCompare(b.categoryName),
     },
     {
-      title: "Sub Brand",
+      title: "MFG BY: Brand",
       dataIndex: "subcategoryName",
       sorter: (a, b) => a.subcategoryName.localeCompare(b.subcategoryName),
     },
     {
-      title: "Sub-sub Brand",
+      title: "Product Category",
       dataIndex: "subcategoryName",
       sorter: (a, b) =>
         a.subSubcategoryName.localeCompare(b.subSubcategoryName),
@@ -201,23 +201,7 @@ const Category = () => {
         </div>
 
         <div className="flex gap-4 mb-6">
-          <Select
-            defaultValue="show_all"
-            style={{ width: 120 }}
-            options={[
-              { value: "show_all", label: "Show all" },
-              { value: "active", label: "Active" },
-              { value: "inactive", label: "Inactive" },
-            ]}
-          />
-          <Input
-            placeholder="Search by name"
-            suffix={<SearchOutlined />}
-            className="max-w-sm"
-            value={searchText}
-            onChange={(e) => handleSearch(e.target.value)}
-          />
-          <Select
+          {/* <Select
             defaultValue="category"
             style={{ width: 120 }}
             options={[
@@ -226,6 +210,13 @@ const Category = () => {
               { value: "motor", label: "Motor" },
               { value: "spare", label: "Spare Parts" },
             ]}
+          /> */}
+          <Input
+            placeholder="Search by name"
+            suffix={<SearchOutlined />}
+            className="max-w-sm"
+            value={searchText}
+            onChange={(e) => handleSearch(e.target.value)}
           />
         </div>
 

@@ -45,7 +45,9 @@ router.get("/v1/dealer/all/list", getDealersAll);
 
 //Sub-Dealer
 router.post("/subdealer/create", isDealerAuthenticated, createSubDealer);
+router.get("/subdealer/:subDealerId/products", getSubDealerProducts);
 router.post("/subdealer/login", subDealerLogin);
+
 router.get("/subdealer/subdealers", isDealerAuthenticated, getSubDealers);
 router.put("/subdealer/subdealer/:id", isDealerAuthenticated, updateSubDealer);
 router.delete(

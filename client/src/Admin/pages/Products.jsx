@@ -12,7 +12,7 @@ import {
 } from "@ant-design/icons";
 import { saveAs } from "file-saver";
 import { toPng } from "html-to-image";
-import QRCodeLib from "qrcode"; // Import qrcode library
+import QRCodeLib from "qrcode";
 import FormModal from "../components/products/FormModal";
 import ProductTemplate from "./Template/Template.jsx";
 import InnerTemplate from "./Template/InnerTemplate.jsx";
@@ -23,9 +23,10 @@ import {
   deleteProduct,
   bulkAssignProductsToDealer,
   getDealersAll,
+  getCategories,
 } from "../../Services/api.js";
 
-// Utility function to generate and download templates
+// Utility function (unchanged)
 const generateAndDownloadTemplate = async (products, type) => {
   const offscreenContainer = document.createElement("div");
   offscreenContainer.style.position = "absolute";
@@ -36,8 +37,6 @@ const generateAndDownloadTemplate = async (products, type) => {
     for (const product of products) {
       const tempContainer = document.createElement("div");
       offscreenContainer.appendChild(tempContainer);
-
-      // Simulate the template HTML (simplified; ideally use ReactDOMServer.renderToString if server-side)
       tempContainer.innerHTML = `
         <div class="${
           type === "outer" ? "product-template-card" : "inner-template-card"
@@ -45,11 +44,9 @@ const generateAndDownloadTemplate = async (products, type) => {
           <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #D1D5DB; background-color: #F9FAFB;">
             <h3>${product.serialNumber || "N/A"}</h3>
             <p>${product.productName || "N/A"}</p>
-            <!-- Add more product details here based on template -->
           </div>
         </div>
       `;
-
       const element = tempContainer.querySelector(
         `.${type === "outer" ? "product-template-card" : "inner-template-card"}`
       );
@@ -60,7 +57,6 @@ const generateAndDownloadTemplate = async (products, type) => {
         );
         continue;
       }
-
       const dataUrl = await toPng(element, { cacheBust: true });
       saveAs(dataUrl, `${type}-template-${product.serialNumber}.png`);
       offscreenContainer.removeChild(tempContainer);
@@ -77,6 +73,7 @@ const Products = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [products, setProducts] = useState([]);
   const [dealers, setDealers] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
@@ -86,22 +83,37 @@ const Products = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all"); // Uses category name
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
     total: 0,
   });
 
+  const fetchCategories = useCallback(async () => {
+    try {
+      const categoryData = await getCategories();
+      setCategories(Array.isArray(categoryData) ? categoryData : []);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      message.error("Failed to fetch categories");
+      setCategories([]);
+    }
+  }, []);
+
   const fetchProducts = useCallback(
     async (page = pagination.current, pageSize = pagination.pageSize) => {
       try {
         setLoading(true);
-        const data = await getProducts({
+        const params = {
           page,
           limit: pageSize,
           search: searchText,
-        });
+        };
+        if (categoryFilter !== "all") {
+          params.categoryName = categoryFilter; // Send category name to backend
+        }
+        const data = await getProducts(params);
         setProducts(data.products || []);
         setPagination((prev) => ({
           ...prev,
@@ -116,13 +128,12 @@ const Products = () => {
         setLoading(false);
       }
     },
-    [searchText, pagination.current, pagination.pageSize]
+    [searchText, categoryFilter, pagination.current, pagination.pageSize]
   );
 
   const fetchDealers = useCallback(async () => {
     try {
       const dealerData = await getDealersAll();
-      console.log("Raw dealer data:", dealerData);
       setDealers(Array.isArray(dealerData) ? dealerData : []);
     } catch (error) {
       console.error("Error fetching dealers:", error.message);
@@ -132,9 +143,10 @@ const Products = () => {
   }, []);
 
   useEffect(() => {
+    fetchCategories();
     fetchProducts();
     fetchDealers();
-  }, [fetchProducts, fetchDealers]);
+  }, [fetchCategories, fetchProducts, fetchDealers]);
 
   const handleCreate = async (values) => {
     try {
@@ -191,23 +203,6 @@ const Products = () => {
     });
   };
 
-  // const handleAssignDealer = async (productId, dealerId) => {
-  //   try {
-  //     const product = products.find((p) => p._id === productId);
-  //     await assignProductToDealer({
-  //       code: product.serialNumber,
-  //       dealerId: dealerId || null,
-  //     });
-  //     message.success(
-  //       dealerId ? "Product assigned successfully" : "Dealer assignment removed"
-  //     );
-  //     fetchProducts();
-  //   } catch (error) {
-  //     message.error("Failed to assign product to dealer");
-  //     console.error("Error assigning dealer:", error);
-  //   }
-  // };
-
   const handleBulkAssign = async (dealerId) => {
     try {
       await bulkAssignProductsToDealer({
@@ -242,24 +237,17 @@ const Products = () => {
 
   const downloadQRCode = (product = selectedProduct) => {
     if (!product) return;
-
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     const size = 150;
     canvas.width = size;
     canvas.height = size + 30;
-
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     QRCodeLib.toCanvas(
       canvas,
       product.barcode || product.serialNumber,
-      {
-        width: size,
-        height: size,
-        margin: 0,
-      },
+      { width: size, height: size, margin: 0 },
       (error) => {
         if (error) {
           console.error("Error generating QR code:", error);
@@ -269,7 +257,6 @@ const Products = () => {
         ctx.font = "16px Arial";
         ctx.textAlign = "center";
         ctx.fillText(product.serialNumber, size / 2, size + 20);
-
         canvas.toBlob((blob) => {
           saveAs(blob, `qrcode-${product.serialNumber}.png`);
         });
@@ -393,27 +380,6 @@ const Products = () => {
       key: "subcategory",
       width: 120,
     },
-    // {
-    //   title: "Dealer",
-    //   key: "dealer",
-    //   width: 200,
-    //   render: (_, record) => (
-    //     <Select
-    //       style={{ width: 180 }}
-    //       placeholder="Assign Dealer"
-    //       value={record.assignedTo?._id || record.assignedTo}
-    //       onChange={(value) => handleAssignDealer(record._id, value)}
-    //       allowClear
-    //       loading={!dealers.length}
-    //     >
-    //       {dealers.map((dealer) => (
-    //         <Select.Option key={dealer._id} value={dealer._id}>
-    //           {`${dealer.firstName} ${dealer.lastName}`}
-    //         </Select.Option>
-    //       ))}
-    //     </Select>
-    //   ),
-    // },
     {
       title: "Added On",
       dataIndex: "createdAt",
@@ -503,15 +469,18 @@ const Products = () => {
         <div className="flex gap-4 mb-6">
           <Select
             value={categoryFilter}
-            style={{ width: 120 }}
+            style={{ width: 200 }}
             onChange={handleCategoryFilter}
-            options={[
-              { value: "all", label: "All Categories" },
-              { value: "pump", label: "Pump" },
-              { value: "motor", label: "Motor" },
-              { value: "spare", label: "Spare Parts" },
-            ]}
-          />
+            loading={!categories.length}
+            placeholder="Select Category"
+          >
+            <Select.Option value="all">All Categories</Select.Option>
+            {categories.map((category) => (
+              <Select.Option key={category._id} value={category.name}>
+                {category.name}
+              </Select.Option>
+            ))}
+          </Select>
           <div className="flex-grow">
             <Input
               placeholder="Search by name or serial number"

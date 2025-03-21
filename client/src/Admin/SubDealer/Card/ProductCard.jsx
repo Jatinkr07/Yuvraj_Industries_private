@@ -27,6 +27,10 @@ export default function ProductCard({ product }) {
     year: "numeric",
   });
 
+  const powerString = power
+    ? `${power.kw || "N/A"}/${power.hp || "N/A"}`
+    : "N/A";
+
   const warrantyPeriod =
     warrantyStartDate && warrantyEndDate
       ? `${new Date(warrantyStartDate).toLocaleDateString("en-US", {
@@ -57,7 +61,7 @@ export default function ProductCard({ product }) {
           </div>
           {[
             { label: "STAGE", value: stage },
-            { label: "KW/HP", value: power },
+            { label: "KW/HP", value: powerString },
             { label: "VOLTS", value: "240V" },
           ].map((item, index) => (
             <div

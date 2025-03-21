@@ -10,21 +10,20 @@ import {
   ArrowLeftOutlined,
   LockOutlined,
 } from "@ant-design/icons";
-import { Link } from "react-router-dom";
 import FormModalSub from "./SubDealerData/FormModalSub";
-import SubDealerModal from "./SubDealerData/SubDealerModal";
 import ProductsPage from "../DealerLogin/Pages/ProductsPage";
 import { deleteDealer, getDealers } from "../../Services/api";
+import SubDealerTable from "./SubDealerTable"; // New component we'll create
 
 const Dealers = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSubDealerModalOpen, setIsSubDealerModalOpen] = useState(false);
-  const [selectedSubDealer, setSelectedSubDealer] = useState(null);
-  const [showProducts, setShowProducts] = useState(false);
   const [selectedDealer, setSelectedDealer] = useState(null);
+  const [showProducts, setShowProducts] = useState(false);
+  const [showSubDealers, setShowSubDealers] = useState(false);
   const [dealers, setDealers] = useState([]);
   const [editDealerData, setEditDealerData] = useState(null);
   const [passwordRequestDealer, setPasswordRequestDealer] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchDealers();
@@ -69,14 +68,21 @@ const Dealers = () => {
     setIsModalOpen(true);
   };
 
+  const filteredDealers = dealers.filter(
+    (dealer) =>
+      dealer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      dealer.phoneNumber.includes(searchTerm) ||
+      dealer.username.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const columns = [
-    { title: "S. No.", dataIndex: "sNo", key: "sNo", width: 100 },
-    { title: "Name", dataIndex: "name", key: "name" },
+    { title: "S. No.", dataIndex: "sNo", key: "sNo", width: 80 },
+    { title: "Name", dataIndex: "name", key: "name", width: 200 },
     {
       title: "Phone Number",
       dataIndex: "phoneNumber",
       key: "phoneNumber",
-      width: 180,
+      width: 150,
     },
     {
       title: "Password Status",
@@ -96,28 +102,32 @@ const Dealers = () => {
     },
     {
       title: "Products",
-      dataIndex: "product",
-      key: "product",
-      width: 120,
+      key: "products",
+      width: 100,
       render: (_, record) => (
         <EyeOutlined
           className="text-blue-600 text-lg cursor-pointer"
           onClick={() => {
             setSelectedDealer(record);
             setShowProducts(true);
+            setShowSubDealers(false);
           }}
         />
       ),
     },
     {
-      title: "SubDealer",
-      dataIndex: "SubDealer",
-      key: "SubDealer",
-      width: 120,
+      title: "Sub-Dealers",
+      key: "subDealers",
+      width: 100,
       render: (_, record) => (
-        <Link to={`/admin/dealer-products/${record.key}`}>
-          <EyeOutlined className="text-blue-600 text-lg cursor-pointer" />
-        </Link>
+        <EyeOutlined
+          className="text-green-600 text-lg cursor-pointer"
+          onClick={() => {
+            setSelectedDealer(record);
+            setShowSubDealers(true);
+            setShowProducts(false);
+          }}
+        />
       ),
     },
     {
@@ -147,7 +157,7 @@ const Dealers = () => {
 
   if (showProducts && selectedDealer) {
     return (
-      <div className="bg-gray-50 min-h-screen">
+      <div className="bg-gray-50 min-h-screen p-4">
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl text-black font-semibold">
@@ -172,8 +182,31 @@ const Dealers = () => {
     );
   }
 
+  if (showSubDealers && selectedDealer) {
+    return (
+      <div className="bg-gray-50 min-h-screen p-4">
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl text-black font-semibold">
+              Sub-Dealers - {selectedDealer.name}
+            </h1>
+            <Button
+              type="default"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => setShowSubDealers(false)}
+              className="text-gray-700 border-gray-400"
+            >
+              Back to Dealers
+            </Button>
+          </div>
+          <SubDealerTable dealerId={selectedDealer.key} />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-gray-50 min-h-screen p-4">
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold">Dealers List</h1>
@@ -200,20 +233,20 @@ const Dealers = () => {
               { value: "inactive", label: "Inactive" },
             ]}
           />
-          <div className="flex-grow">
-            <Input
-              placeholder="Search"
-              suffix={<SearchOutlined />}
-              className="max-w-sm"
-            />
-          </div>
+          <Input
+            placeholder="Search dealers"
+            prefix={<SearchOutlined />}
+            className="max-w-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
 
         <Table
           columns={columns}
-          dataSource={dealers}
-          pagination={true}
-          scroll={{ x: 1200, y: 500 }}
+          dataSource={filteredDealers}
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: 1000, y: 500 }}
         />
       </div>
 
@@ -228,12 +261,6 @@ const Dealers = () => {
         initialData={editDealerData || passwordRequestDealer}
         isPasswordRequest={!!passwordRequestDealer}
         dealerId={passwordRequestDealer?.key}
-      />
-
-      <SubDealerModal
-        visible={isSubDealerModalOpen}
-        onCancel={() => setIsSubDealerModalOpen(false)}
-        product={selectedSubDealer}
       />
     </div>
   );

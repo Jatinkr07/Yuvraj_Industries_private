@@ -20,7 +20,7 @@ const FormModalSub = ({
         lastName: initialData.lastName,
         phoneNumber: initialData.phoneNumber,
         username: initialData.username,
-        // Don't pre-fill password unless it's a new dealer creation
+
         password:
           initialData.passwordChangeRequest?.status === "pending"
             ? undefined
