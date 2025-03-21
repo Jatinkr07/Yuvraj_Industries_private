@@ -1,7 +1,7 @@
 import axios from "axios";
 
-export const API_URL = "http://localhost:6600";
-// export const API_URL = "https://yuvraj-industries-private.onrender.com";
+// export const API_URL = "http://localhost:6600";
+export const API_URL = "https://yuvraj-industries-private-2.onrender.com";
 
 const api = axios.create({
   baseURL: API_URL,

@@ -8,10 +8,13 @@ import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
 export default function QRScanner({ isOpen, onClose, onScanSuccess }) {
   const [manualSerial, setManualSerial] = useState("");
   const [error, setError] = useState(null);
+  const [cameraId, setCameraId] = useState(null);
+  const [isFrontCamera, setIsFrontCamera] = useState(false);
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
+  const lastTapRef = useRef(0);
 
-  const startScanning = async () => {
+  const startScanning = async (selectedCameraId) => {
     setError(null);
     try {
       console.log("[Html5Qrcode] Requesting camera access...");
@@ -20,9 +23,18 @@ export default function QRScanner({ isOpen, onClose, onScanSuccess }) {
         throw new Error("No cameras found on this device.");
       }
 
-      const cameraId =
-        devices.find((device) => device.facingMode === "environment")?.id ||
-        devices[0].id;
+      const rearCamera = devices.find(
+        (device) => device.facingMode === "environment"
+      );
+      const frontCamera = devices.find(
+        (device) => device.facingMode === "user"
+      );
+
+      const initialCameraId =
+        selectedCameraId || rearCamera?.id || devices[0].id;
+
+      setCameraId(initialCameraId);
+      setIsFrontCamera(frontCamera?.id === initialCameraId);
 
       html5QrCodeRef.current = new Html5Qrcode(scannerRef.current.id);
 
@@ -30,7 +42,7 @@ export default function QRScanner({ isOpen, onClose, onScanSuccess }) {
         fps: 20,
         qrbox: { width: 350, height: 200 },
         aspectRatio: 1.75,
-        formatsToSupport: ["CODE_128"],
+        formatsToSupport: ["CODE_128", "QR_CODE"],
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true,
         },
@@ -38,31 +50,34 @@ export default function QRScanner({ isOpen, onClose, onScanSuccess }) {
       };
 
       await html5QrCodeRef.current.start(
-        cameraId,
+        initialCameraId,
         config,
         (decodedText, decodedResult) => {
-          console.log("[Html5Qrcode] Detected barcode:", {
+          console.log("[Html5Qrcode] Detected code:", {
             decodedText,
+            type: decodedResult.format?.format || "Unknown",
             confidence: decodedResult?.confidence || "N/A",
-            format: decodedResult?.format || "N/A",
-            rawBytes: decodedResult?.rawBytes || "N/A",
           });
 
-          const isValidFormat =
-            /^PRD-\d+-\d{4}$/.test(decodedText) && decodedText.length > 10;
-          if (isValidFormat) {
-            console.log(
-              "[Html5Qrcode] Valid barcode detected, proceeding with assignment"
-            );
-            stopScanning();
-            onScanSuccess(decodedText);
-            onClose();
-          } else {
-            setError(
-              "Invalid barcode format. Expected: PRD-<timestamp>-<random>"
-            );
-            console.warn("[Html5Qrcode] Invalid format detected:", decodedText);
+          // Validate barcode format if it's CODE_128
+          if (decodedResult.format?.format === "CODE_128") {
+            const isValidFormat =
+              /^PRD-\d+-\d{4}$/.test(decodedText) && decodedText.length > 10;
+            if (!isValidFormat) {
+              setError(
+                "Invalid barcode format. Expected: PRD-<timestamp>-<random>"
+              );
+              console.warn(
+                "[Html5Qrcode] Invalid barcode format:",
+                decodedText
+              );
+              return;
+            }
           }
+
+          stopScanning();
+          onScanSuccess(decodedText);
+          onClose();
         },
         (errorMessage) => {
           console.log("[Html5Qrcode] Scan error:", {
@@ -71,15 +86,9 @@ export default function QRScanner({ isOpen, onClose, onScanSuccess }) {
           });
         }
       );
-      console.log(
-        "[Html5Qrcode] Scanner started successfully with config:",
-        config
-      );
+      console.log("[Html5Qrcode] Scanner started with config:", config);
     } catch (err) {
-      console.error("[Html5Qrcode] Error starting scanner:", {
-        message: err.message,
-        stack: err.stack,
-      });
+      console.error("[Html5Qrcode] Error starting scanner:", err);
       setError(
         `Camera error: ${err.message || "Permission denied or no camera"}`
       );
@@ -104,6 +113,29 @@ export default function QRScanner({ isOpen, onClose, onScanSuccess }) {
     }
   };
 
+  const handleDoubleTap = async () => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300; // milliseconds
+
+    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+      stopScanning();
+      const devices = await Html5Qrcode.getCameras();
+      const rearCamera = devices.find(
+        (device) => device.facingMode === "environment"
+      );
+      const frontCamera = devices.find(
+        (device) => device.facingMode === "user"
+      );
+
+      const newCameraId = isFrontCamera ? rearCamera?.id : frontCamera?.id;
+      if (newCameraId) {
+        setIsFrontCamera(!isFrontCamera);
+        await startScanning(newCameraId);
+      }
+    }
+    lastTapRef.current = now;
+  };
+
   useEffect(() => {
     if (isOpen) {
       console.log("[Html5Qrcode] Starting scanner...");
@@ -126,13 +158,13 @@ export default function QRScanner({ isOpen, onClose, onScanSuccess }) {
       setManualSerial("");
       onClose();
     } else {
-      message.error("Please enter a valid code (e.g., PRD-1740558574201-4971)");
+      message.error("Please enter a valid code");
     }
   };
 
   return (
     <Modal
-      title="Scan Barcode"
+      title={`Scan Barcode/QR (${isFrontCamera ? "Front" : "Rear"} Camera)`}
       open={isOpen}
       onCancel={() => {
         stopScanning();
@@ -146,16 +178,21 @@ export default function QRScanner({ isOpen, onClose, onScanSuccess }) {
     >
       <div
         ref={scannerRef}
-        className="relative w-full h-64"
+        onClick={handleDoubleTap}
+        className="relative w-full h-64 cursor-pointer"
         style={{ overflow: "hidden", backgroundColor: "black" }}
-      />
+      >
+        <div className="absolute top-2 left-2 text-white bg-black/50 px-2 py-1 rounded">
+          Double-tap to switch camera
+        </div>
+      </div>
       {error && <div className="mt-4 text-center text-red-600">{error}</div>}
       <div className="mt-4 text-center">
         <div className="flex items-center justify-center gap-2">
           <Input
             value={manualSerial}
             onChange={(e) => setManualSerial(e.target.value)}
-            placeholder="Enter code manually (e.g., PRD-1740558574201-4971)"
+            placeholder="Enter code manually"
             prefix={<QrcodeOutlined />}
             onPressEnter={handleManualSubmit}
           />
