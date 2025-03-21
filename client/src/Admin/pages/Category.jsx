@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import { Table, Input, Button, Select, message } from "antd";
@@ -24,8 +25,9 @@ const Category = () => {
     try {
       const data = await getCategories();
       const formattedData = Array.isArray(data) ? data : [];
+      console.log("Category - Fetched Categories:", formattedData); // Log fetched data
       setCategories(formattedData);
-      flattenData(formattedData); // Transform data for table
+      flattenData(formattedData);
     } catch (error) {
       message.error("Failed to fetch categories");
       setCategories([]);
@@ -85,6 +87,7 @@ const Category = () => {
         });
       }
     });
+    console.log("Category - Flattened Table Data:", flattened); // Log table data
     setTableData(flattened);
   };
 
@@ -92,9 +95,10 @@ const Category = () => {
     try {
       await deleteCategory(categoryId);
       message.success("Category deleted successfully!");
-      fetchCategories();
+      fetchCategories(); // Refresh data after delete
     } catch (error) {
       message.error("Failed to delete category");
+      console.error("Category - Delete Error:", error);
     }
   };
 
@@ -144,7 +148,7 @@ const Category = () => {
     },
     {
       title: "Sub-sub Brand",
-      dataIndex: "subSubcategoryName",
+      dataIndex: "subcategoryName",
       sorter: (a, b) =>
         a.subSubcategoryName.localeCompare(b.subSubcategoryName),
     },
@@ -155,7 +159,7 @@ const Category = () => {
       render: (image) =>
         image ? (
           <img
-            src={`${API_URL}/uploads/${image}`}
+            src={`${API_URL}/${image}`}
             alt="Category"
             className="w-16 h-16 object-cover rounded-md"
           />

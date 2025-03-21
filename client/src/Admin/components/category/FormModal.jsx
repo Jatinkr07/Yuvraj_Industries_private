@@ -32,10 +32,18 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
         form.setFieldsValue({ category: initialData.name });
         setSubcategories(initialData.subcategories || []);
         if (initialData.image) {
-          const imageUrl = `${API_URL}/${initialData.image}`;
+          const imagePath = initialData.image.startsWith("uploads/")
+            ? initialData.image
+            : `uploads/${initialData.image}`;
+          const imageUrl = `${API_URL}/${imagePath}`;
           setPreviewUrl(imageUrl);
           setFileList([
-            { uid: "-1", name: "image", status: "done", url: imageUrl },
+            {
+              uid: "-1",
+              name: imagePath.split("/").pop(),
+              status: "done",
+              url: imageUrl,
+            },
           ]);
           setImageDeleted(false);
         } else {
@@ -72,13 +80,14 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
   };
 
   const removeImage = async () => {
-    if (initialData?.image) {
+    if (initialData?.image && !imageDeleted) {
       try {
         await removeCategoryImage(initialData._id);
         message.success("Image removed successfully!");
         setFileList([]);
         setPreviewUrl(null);
         setImageDeleted(true);
+        refreshData();
       } catch (error) {
         message.error("Failed to remove image");
       }
@@ -139,16 +148,28 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
 
     if (fileList.length > 0 && fileList[0].originFileObj) {
       formData.append("image", fileList[0].originFileObj);
+      console.log("FormModal - Image File Added:", fileList[0].originFileObj);
     } else if (imageDeleted) {
       formData.append("image", "");
+      console.log("FormModal - Image Deleted, Setting to Empty");
+    } else {
+      console.log("FormModal - No Image Provided");
+    }
+
+    console.log("FormModal - Submitting Form Data:");
+    for (let pair of formData.entries()) {
+      console.log(`${pair[0]}: ${pair[1]}`);
     }
 
     try {
+      let response;
       if (initialData) {
-        await updateCategory(initialData._id, formData);
+        response = await updateCategory(initialData._id, formData);
+        console.log("FormModal - Update Response:", response.data);
         message.success("Category updated successfully!");
       } else {
-        await createCategory(formData);
+        response = await createCategory(formData);
+        console.log("FormModal - Create Response:", response.data);
         message.success("Category created successfully!");
       }
       form.resetFields();
@@ -163,6 +184,10 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
       refreshData();
     } catch (error) {
       message.error("Error saving category");
+      console.error(
+        "FormModal - Error:",
+        error.response?.data || error.message
+      );
     }
   };
 
@@ -186,6 +211,7 @@ const FormModal = ({ isOpen, onClose, refreshData, initialData }) => {
 
         <Form.Item label="Image (Optional)">
           <Upload
+            name="image"
             accept="image/*"
             showUploadList={false}
             beforeUpload={() => false}
