@@ -1,7 +1,7 @@
 import axios from "axios";
 
-export const API_URL = "http://localhost:6600";
-// export const API_URL = "https://yuvraj-industries-private-2.onrender.com";
+// export const API_URL = "http://localhost:4550";
+export const API_URL = "https://yuvraj-industries-private-2.onrender.com";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -68,14 +68,22 @@ export const dealerLogin = async (data) => {
   return response.data;
 };
 
-export const getDealers = () => api.get("/api/dealer/list");
+export const getDealers = () =>
+  api.get("/api/dealer/list", {
+    withCredentials: true,
+  });
 
-export const updateDealer = (id, data) => api.put(`/api/dealer/${id}`, data);
+export const updateDealer = (id, data) =>
+  api.put(`/api/dealer/${id}`, data, {
+    withCredentials: true,
+  });
 
 export const deleteDealer = (id) => api.delete(`/api/dealer/${id}`);
 
 export const createSubDealer = (data) =>
-  api.post("/api/dealer/subdealer/create", data);
+  api.post("/api/dealer/subdealer/create", data, {
+    withCredentials: true,
+  });
 export const updateSubDealer = (id, data) =>
   axios.put(`${API_URL}/api/dealer/subdealer/subdealer/${id}`, data, {
     withCredentials: true,
@@ -88,7 +96,10 @@ export const getSubDealers = () =>
 
 export const getSubDealersData = async (dealerId) => {
   const response = await api.get(
-    `/api/dealer/subdealer/subdealers?dealerId=${dealerId}`
+    `/api/dealer/subdealer/subdealers?dealerId=${dealerId}`,
+    {
+      withCredentials: true,
+    }
   );
   return response.data;
 };
@@ -115,20 +126,27 @@ export const bulkAssignProductsToDealer = async (data) => {
 };
 
 export const getDealersAll = async () => {
-  const response = await api.get("/api/dealer/v1/list/dealer");
-  console.log("getDealers response:", response.data);
+  const response = await api.get("/api/dealer/v1/list/dealer", {
+    withCredentials: true,
+  });
+
   return response.data;
 };
 
 export const getSubDealersAll = async () => {
-  const response = await api.get("/api/dealer/subdealer/subdealers");
-  console.log("getDealers response:", response.data);
+  const response = await api.get("/api/dealer/subdealer/subdealers", {
+    withCredentials: true,
+  });
+
   return response.data;
 };
 
 export const getDealerProducts = async (dealerId) => {
   const response = await api.get(
-    dealerId ? `/api/dealer/products/${dealerId}` : "/api/dealer/products"
+    dealerId ? `/api/dealer/products/${dealerId}` : "/api/dealer/products",
+    {
+      withCredentials: true,
+    }
   );
   return response.data;
 };
@@ -137,7 +155,10 @@ export const getSubDealerProducts = async (subDealerId, dealerId) => {
   const response = await api.get(
     `/api/dealer/subdealer/${subDealerId}/products${
       dealerId ? `?dealerId=${dealerId}` : ""
-    }`
+    }`,
+    {
+      withCredentials: true,
+    }
   );
   return response.data;
 };
@@ -197,7 +218,8 @@ export const updateDealerPasswordByAdmin = async (id, data) => {
 
 export const getSubDealersAlls = async (dealerId) => {
   const response = await api.get(
-    `/api/dealer/subdealer/subdealers?dealerId=${dealerId}`
+    `/api/dealer/subdealer/subdealers?dealerId=${dealerId}`,
+    { withCredentials: true }
   );
   return response.data;
 };
@@ -207,7 +229,10 @@ export const getSubDealerProductsAlls = async (subDealerId, dealerId) => {
   const response = await api.get(
     `/api/dealer/subdealer/${subDealerId}/products${
       dealerId ? `?dealerId=${dealerId}` : ""
-    }`
+    }`,
+    {
+      withCredentials: true,
+    }
   );
   return response.data;
 };

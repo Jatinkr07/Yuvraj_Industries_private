@@ -39,5 +39,5 @@ app.use("/api/dealer", dealerRoutes);
 app.use("/api/sale", saleRoutes);
 app.use("/api/admin", adminRoutes);
 
-const PORT = process.env.PORT || 6600;
+const PORT = process.env.PORT || 4550;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

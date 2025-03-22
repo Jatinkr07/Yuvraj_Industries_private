@@ -22,7 +22,7 @@ import {
   updateProduct,
   deleteProduct,
   bulkAssignProductsToDealer,
-  getDealersAll,
+  // getDealersAll,
   getCategories,
 } from "../../Services/api.js";
 
@@ -131,22 +131,22 @@ const Products = () => {
     [searchText, categoryFilter, pagination.current, pagination.pageSize]
   );
 
-  const fetchDealers = useCallback(async () => {
-    try {
-      const dealerData = await getDealersAll();
-      setDealers(Array.isArray(dealerData) ? dealerData : []);
-    } catch (error) {
-      console.error("Error fetching dealers:", error.message);
-      message.error("Failed to fetch dealers: " + error.message);
-      setDealers([]);
-    }
-  }, []);
+  // const fetchDealers = useCallback(async () => {
+  //   try {
+  //     const dealerData = await getDealersAll();
+  //     setDealers(Array.isArray(dealerData) ? dealerData : []);
+  //   } catch (error) {
+  //     console.error("Error fetching dealers:", error.message);
+  //     message.error("Failed to fetch dealers: " + error.message);
+  //     setDealers([]);
+  //   }
+  // }, []);
 
   useEffect(() => {
     fetchCategories();
     fetchProducts();
-    fetchDealers();
-  }, [fetchCategories, fetchProducts, fetchDealers]);
+    // fetchDealers();
+  }, [fetchCategories, fetchProducts]);
 
   const handleCreate = async (values) => {
     try {
