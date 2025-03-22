@@ -3,6 +3,7 @@ import SubDealer from "../Model/SubDealer.js";
 
 const verifyToken = (tokenName, role) => {
   return (req, res, next) => {
+    console.log("COOKIES---->", req.cookies);
     const token = req.cookies?.[tokenName];
 
     if (!token) {

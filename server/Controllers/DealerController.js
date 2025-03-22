@@ -56,8 +56,8 @@ export const dealerLogin = async (req, res) => {
 
     res.cookie("dealerToken", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       maxAge: 3600000 * 36000,
     });
     res.status(200).json({
