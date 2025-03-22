@@ -34,8 +34,8 @@ export const adminLogin = async (req, res) => {
     res.cookie("adminAuth", "authenticated", {
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
-      maxAge: 3600000,
+      sameSite: "none",
+      maxAge: 3600000 * 24,
     });
     return res.status(200).json({ message: "Login successful" });
   } catch (error) {

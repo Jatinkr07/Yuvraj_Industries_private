@@ -5,6 +5,7 @@ const verifyToken = (tokenName, role) => {
   return (req, res, next) => {
     console.log("COOKIES---->", req.cookies);
     const token = req.cookies?.[tokenName];
+    console.log(`${tokenName}:`, token);
 
     if (!token) {
       return res.status(401).json({ message: `No ${role} token provided` });
