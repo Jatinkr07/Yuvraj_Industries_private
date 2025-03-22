@@ -3,9 +3,7 @@ import SubDealer from "../Model/SubDealer.js";
 
 const verifyToken = (tokenName, role) => {
   return (req, res, next) => {
-    console.log("COOKIES---->", req.cookies);
     const token = req.cookies?.[tokenName];
-    console.log(`${tokenName}:`, token);
 
     if (!token) {
       return res.status(401).json({ message: `No ${role} token provided` });
@@ -53,20 +51,7 @@ export const isAuthenticated = (req, res, next) => {
   return res.status(401).json({ message: "Unauthorized" });
 };
 
-export const isDealerAuthenticated = (req, res, next) => {
-  const token = req.cookies?.dealerToken;
-  if (!token) {
-    return res.status(401).json({ message: "No dealer token provided" });
-  }
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.dealerId = decoded.id; // Ensure this is set
-    req.role = decoded.role || "dealer";
-    next();
-  } catch (error) {
-    return res.status(401).json({ message: "Invalid or expired token" });
-  }
-};
+export const isDealerAuthenticated = verifyToken("dealerToken", "dealer");
 
 export const isSubDealerAuthenticated = verifyToken(
   "subDealerToken",

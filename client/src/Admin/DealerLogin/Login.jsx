@@ -1,5 +1,6 @@
 import { Form, Input, Button } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
+import Cookies from "js-cookie";
 import { dealerLogin } from "../../Services/api";
 
 export default function DealerLogin() {
@@ -15,12 +16,19 @@ export default function DealerLogin() {
       const response = await dealerLogin({ identifier, password });
       console.log("API Response:", response.data);
 
-      console.log("dealerToken should be set by backend");
+      Cookies.set("dealerAuth", "authenticated", {
+        secure: true,
+        sameSite: "strict",
+        expires: 1,
+      });
+      console.log("Cookie set: dealerAuth=authenticated");
 
+      // Ensure navigation happens
       const targetPath = from;
       console.log("Navigating to:", targetPath);
       navigate(targetPath, { replace: true });
 
+      // Debug: Verify current path after navigation
       setTimeout(() => {
         console.log("Current path after navigation:", window.location.pathname);
       }, 100);
