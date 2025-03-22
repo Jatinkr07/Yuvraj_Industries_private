@@ -38,7 +38,7 @@ router.get("/list", getDealers);
 router.delete("/:id", isAuthenticated, deleteDealer);
 router.put("/:id", isAuthenticated, updateDealer);
 router.get("/products", isDealerAuthenticated, getDealerProducts);
-router.get("/products/:dealerId", isAuthenticated, getDealerProducts);
+router.get("/products/:dealerId", getDealerProducts);
 router.post("/password/request", requestPasswordChange);
 router.put("/password/:id", updateDealerPasswordByAdmin);
 router.get("/v1/list/dealer", getDealers);
