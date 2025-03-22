@@ -39,11 +39,7 @@ router.get(
 );
 
 router.get("/v1/sales/all", getAllSales);
-router.post(
-  "/v1/sales/replace/admin/:saleId",
-  isAuthenticated,
-  adminReplaceProduct
-);
+router.post("/v1/sales/replace/admin/:saleId", adminReplaceProduct);
 
 router.get("/v1/replacements/all", getAllReplacements);
 
