@@ -33,7 +33,7 @@ const router = express.Router();
 
 router.post("/create", isAuthenticated, createDealer);
 router.post("/login", dealerLogin);
-router.get("/list", isAuthenticated, getDealers);
+router.get("/list", getDealers);
 router.delete("/:id", isAuthenticated, deleteDealer);
 router.put("/:id", isAuthenticated, updateDealer);
 router.get("/products", isDealerAuthenticated, getDealerProducts);
