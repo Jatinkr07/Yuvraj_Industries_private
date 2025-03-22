@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// export const API_URL = "http://localhost:6600";
-export const API_URL = "https://yuvraj-industries-private-2.onrender.com";
+export const API_URL = "http://localhost:6600";
+// export const API_URL = "https://yuvraj-industries-private-2.onrender.com";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -192,5 +192,22 @@ export const requestPasswordChange = async (data) => {
 
 export const updateDealerPasswordByAdmin = async (id, data) => {
   const response = await api.put(`/api/dealer/password/${id}`, data);
+  return response.data;
+};
+
+export const getSubDealersAlls = async (dealerId) => {
+  const response = await api.get(
+    `/api/dealer/subdealer/subdealers?dealerId=${dealerId}`
+  );
+  return response.data;
+};
+
+// Fetch sub-dealer products
+export const getSubDealerProductsAlls = async (subDealerId, dealerId) => {
+  const response = await api.get(
+    `/api/dealer/subdealer/${subDealerId}/products${
+      dealerId ? `?dealerId=${dealerId}` : ""
+    }`
+  );
   return response.data;
 };

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Table, Button } from "antd";
 import { EyeOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import ProductsPage from "../DealerLogin/Pages/ProductsPage";
-import { getSubDealersAll } from "../../Services/api";
+import { getSubDealersAlls } from "../../Services/api";
 
 const SubDealerTable = ({ dealerId }) => {
   const [subDealers, setSubDealers] = useState([]);
@@ -17,7 +17,7 @@ const SubDealerTable = ({ dealerId }) => {
 
   const fetchSubDealers = async () => {
     try {
-      const response = await getSubDealersAll(dealerId);
+      const response = await getSubDealersAlls(dealerId);
       const formattedData = response.map((subDealer, index) => ({
         key: subDealer._id,
         sNo: index + 1,
@@ -62,7 +62,7 @@ const SubDealerTable = ({ dealerId }) => {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl text-black font-semibold">
-            Products - {selectedSubDealer.name}
+            Sub-Dealer - {selectedSubDealer.name}
           </h1>
           <Button
             type="default"

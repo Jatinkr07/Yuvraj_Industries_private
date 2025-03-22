@@ -173,61 +173,6 @@ function calculateWarrantyDays(warranty, unit) {
   }
 }
 
-// export const assignProductToDealer = async (req, res) => {
-//   try {
-//     const { code } = req.body;
-//     const dealerId = req.dealerId;
-
-//     console.log("[Backend] Received code for assignment:", code);
-//     console.log("[Backend] Dealer ID:", dealerId);
-
-//     if (!code) {
-//       console.log("[Backend] Error: No code provided");
-//       return res
-//         .status(400)
-//         .json({ message: "No barcode or serial number provided" });
-//     }
-
-//     let product = await Product.findOne({
-//       $or: [{ barcode: code }, { serialNumber: code }],
-//     });
-
-//     console.log("[Backend] Found product:", product ? product : "None");
-
-//     if (!product) {
-//       console.log("[Backend] Product not found for code:", code);
-//       return res.status(404).json({
-//         message:
-//           "Product not found. Ensure the barcode or serial number exists.",
-//       });
-//     }
-
-//     if (product.isAssigned) {
-//       console.log("[Backend] Product already assigned:", product._id);
-//       return res.status(400).json({ message: "Product already assigned" });
-//     }
-
-//     const updatedProduct = await Product.findOneAndUpdate(
-//       { _id: product._id },
-//       { assignedTo: dealerId, isAssigned: true, assignedAt: new Date() },
-//       { new: true }
-//     ).populate("category", "name");
-
-//     console.log("[Backend] Product assigned successfully:", updatedProduct);
-
-//     res.status(200).json({
-//       message: "Product assigned successfully",
-//       product: updatedProduct,
-//     });
-//   } catch (error) {
-//     console.error("[Backend] Error assigning product:", error.message);
-//     res.status(500).json({
-//       message: "Failed to assign product",
-//       error: error.message,
-//     });
-//   }
-// };
-
 export const assignProductToDealer = async (req, res) => {
   try {
     const { code, dealerId } = req.body;
@@ -363,76 +308,6 @@ export const bulkAssignProductsToDealer = async (req, res) => {
     });
   }
 };
-// export const assignProductToSubDealer = async (req, res) => {
-//   try {
-//     const { code } = req.body;
-//     const subDealerId = req.subDealerId;
-//     const dealerId = req.dealerId;
-
-//     console.log("Assigning to SubDealer - Code:", code);
-//     console.log("SubDealer ID:", subDealerId);
-//     console.log("Dealer ID:", dealerId);
-
-//     if (!code) {
-//       return res
-//         .status(400)
-//         .json({ message: "No barcode or serial number provided" });
-//     }
-
-//     // Log all products with this code for debugging
-//     const allProducts = await Product.find({
-//       $or: [{ barcode: code }, { serialNumber: code }],
-//     });
-//     console.log("All products with code:", allProducts);
-
-//     let product = await Product.findOne({
-//       $or: [{ barcode: code }, { serialNumber: code }],
-//       assignedTo: dealerId,
-//       isAssigned: true,
-//     });
-
-//     console.log("Found Product with conditions:", product || "None");
-
-//     if (!product) {
-//       return res.status(404).json({
-//         message:
-//           "Product not found or not assigned to your dealer. Ensure the barcode or serial number is correct.",
-//       });
-//     }
-
-//     if (product.isAssignedToSubDealer) {
-//       return res
-//         .status(400)
-//         .json({ message: "Product already assigned to a sub-dealer" });
-//     }
-
-//     const updatedProduct = await Product.findOneAndUpdate(
-//       { _id: product._id },
-//       {
-//         assignedToSubDealer: subDealerId,
-//         isAssignedToSubDealer: true,
-//         assignedToSubDealerAt: new Date(),
-//       },
-//       { new: true }
-//     ).populate("category", "name");
-
-//     console.log("Assigned Product:", updatedProduct);
-
-//     res.status(200).json({
-//       message: "Product assigned to sub-dealer successfully",
-//       product: updatedProduct,
-//     });
-//   } catch (error) {
-//     console.error(
-//       "[Backend] Error assigning product to sub-dealer:",
-//       error.message
-//     );
-//     res.status(500).json({
-//       message: "Failed to assign product to sub-dealer",
-//       error: error.message,
-//     });
-//   }
-// };
 
 export const assignProductToSubDealer = async (req, res) => {
   try {

@@ -143,18 +143,15 @@ export const deleteSubDealer = async (req, res) => {
   }
 };
 
-// In SubDealerController.js
-// In SubDealerController.js
 export const getSubDealerProducts = async (req, res) => {
   try {
     const subDealerId = req.params.subDealerId || req.query.subDealerId;
-    const dealerId = req.query.dealerId || req.dealerId; // Optional for validation
+    const dealerId = req.query.dealerId || req.dealerId;
 
     if (!subDealerId) {
       return res.status(400).json({ message: "Sub-dealer ID is required" });
     }
 
-    // Optionally validate that the sub-dealer belongs to the dealer
     if (dealerId) {
       const subDealer = await SubDealer.findOne({
         _id: subDealerId,
@@ -167,6 +164,26 @@ export const getSubDealerProducts = async (req, res) => {
       }
     }
 
+    const products = await Product.find({
+      assignedToSubDealer: subDealerId,
+      isAssignedToSubDealer: true,
+      isReplaced: false,
+    })
+      .populate("category", "name")
+      .sort({ assignedToSubDealerAt: -1 });
+
+    res.status(200).json({ products });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching sub-dealer products",
+      error: error.message,
+    });
+  }
+};
+
+export const getSubDealerProductsAll = async (req, res) => {
+  try {
+    const subDealerId = req.subDealerId;
     const products = await Product.find({
       assignedToSubDealer: subDealerId,
       isAssignedToSubDealer: true,

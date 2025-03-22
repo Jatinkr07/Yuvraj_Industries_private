@@ -33,6 +33,7 @@ import AdminLogin from "./Admin/components/AdminLogin/AdminLogin";
 import SubDealerProductsPage from "./Admin/SubDealer/Pages/ProductsPage";
 import ForgotPassword from "./Admin/components/forget/ForgetPassword";
 import UnauthenticatedRoute from "./Admin/context/UnauthenticateRoute";
+import DealerProductsPage from "./Admin/DealerLogin/Pages/DealerProductPage";
 
 // Lazy-loaded Admin Routes
 const AdminLayout = React.lazy(() => import("./Admin/AdminLayout"));
@@ -68,7 +69,7 @@ const router = createBrowserRouter(
             path="products"
             element={
               <MainLayout>
-                <ProductsPage />
+                <DealerProductsPage />
               </MainLayout>
             }
           />

@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useEffect, useState } from "react";
-import { Table, Input, Button, Select, Modal } from "antd";
+import { Table, Input, Button, Select } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
@@ -13,7 +13,7 @@ import {
 import FormModalSub from "./SubDealerData/FormModalSub";
 import ProductsPage from "../DealerLogin/Pages/ProductsPage";
 import { deleteDealer, getDealers } from "../../Services/api";
-import SubDealerTable from "./SubDealerTable"; // New component we'll create
+import SubDealerTable from "./SubDealerTable";
 
 const Dealers = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -188,7 +188,7 @@ const Dealers = () => {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl text-black font-semibold">
-              Sub-Dealers - {selectedDealer.name}
+              Dealer - {selectedDealer.name}
             </h1>
             <Button
               type="default"

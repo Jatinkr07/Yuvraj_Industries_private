@@ -2,7 +2,6 @@ import jwt from "jsonwebtoken";
 import Dealer from "../Model/Dealer.js";
 import Product from "../Model/Products.js";
 import mongoose from "mongoose";
-import path from "path";
 
 export const createDealer = async (req, res) => {
   try {
@@ -57,10 +56,9 @@ export const dealerLogin = async (req, res) => {
 
     res.cookie("dealerToken", token, {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 3600000 * 36000,
-      path: "/",
     });
     res.status(200).json({
       message: "Login successful",

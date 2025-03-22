@@ -2,14 +2,14 @@
 /* eslint-disable react/prop-types */
 
 import { useState, useEffect } from "react";
-import { Col, Input, Row, Select, Button, message } from "antd";
+import { Col, Input, Row, Button, message } from "antd";
 import { SearchOutlined, QrcodeOutlined } from "@ant-design/icons";
 import ProductCard from "../Card/ProductCard";
 import QRScanner from "./BarCode/QRScanner";
 import {
   assignProductToDealer,
   getDealerProducts,
-  getSubDealerProducts,
+  getSubDealerProductsAlls,
 } from "../../../Services/api";
 
 export default function ProductsPage({
@@ -28,7 +28,7 @@ export default function ProductsPage({
       setLoading(true);
       let response;
       if (subDealerId) {
-        response = await getSubDealerProducts(subDealerId, dealerId);
+        response = await getSubDealerProductsAlls(subDealerId, dealerId);
         setProducts(response.products || []);
       } else if (dealerId) {
         response = await getDealerProducts(dealerId);
