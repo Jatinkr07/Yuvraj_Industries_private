@@ -126,10 +126,18 @@ export const getSubDealersAll = async () => {
   return response.data;
 };
 
+// export const getDealerProducts = async (dealerId) => {
+//   const response = await api.get(
+//     dealerId ? `/api/dealer/products/${dealerId}` : "/api/dealer/products"
+//   );
+//   return response.data;
+// };
+
 export const getDealerProducts = async (dealerId) => {
-  const response = await api.get(
-    dealerId ? `/api/dealer/products/${dealerId}` : "/api/dealer/products"
-  );
+  if (!dealerId) {
+    throw new Error("Dealer ID is required");
+  }
+  const response = await api.get(`/api/dealer/products/${dealerId}`);
   return response.data;
 };
 
