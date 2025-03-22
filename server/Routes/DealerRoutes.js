@@ -50,7 +50,7 @@ router.get("/subdealer/:subDealerId/products", getSubDealerProducts);
 router.post("/subdealer/login", subDealerLogin);
 
 router.get("/subdealer/subdealers", isDealerAuthenticated, getSubDealers);
-router.put("/subdealer/subdealer/:id", isDealerAuthenticated, updateSubDealer);
+router.put("/subdealer/subdealer/:id", updateSubDealer);
 router.delete(
   "/subdealer/subdealer/:id",
   isDealerAuthenticated,
